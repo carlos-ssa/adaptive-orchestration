@@ -1,0 +1,6 @@
+interface:
+  display_name: "Coordenação adaptativa"
+  short_description: "Modelos por tarefa e fluxos com revisão verificável"
+  default_prompt: "Use $adaptive-orchestration para escolher os modelos e organizar este trabalho com critérios de aceitação e revisão."
+policy:
+  allow_implicit_invocation: true
