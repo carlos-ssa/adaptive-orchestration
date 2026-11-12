@@ -1,52 +1,54 @@
 # Adaptive Orchestration
 
-Skill em português para escolher modelos por tarefa e coordenar execução, pesquisa e revisão em CLIs e assistentes de IA. Combina escolha por tarefa e esforço, planejamento no principal e execução delegada, fluxos dinâmicos e avaliações do Artificial Analysis.
+Skill em português para coordenação adaptativa em CLIs e assistentes de IA: escolher modelos por tarefa, delegar blocos verificáveis e integrar resultados com evidências. Combina [três guias de origem e Artificial Analysis](references/sources.md).
 
-## Uso
-
-Peça ao assistente para aplicar `adaptive-orchestration`. Em ambientes que aceitam a sintaxe de skills por nome:
-
-```text
-Use $adaptive-orchestration para investigar esta falha e verificar a solução.
-```
-
-Outros exemplos:
-
-- Comparar modelos disponíveis para uma migração, considerando qualidade, custo e tempo.
-- Verificar todas as afirmações de um relatório e registrar itens sem evidência.
-- Investigar hipóteses concorrentes de uma falha intermitente.
-- Comparar alternativas de implementação com critérios comuns.
-
-Tarefas simples continuam em execução direta. A descoberta automática depende do cliente; não é garantida em toda solicitação. Use o nome explicitamente ou forneça o SKILL.md quando precisar assegurar a aplicação.
-
-## Instalação e portabilidade
+## Uso em diferentes CLIs
 
 ```sh
 git clone https://github.com/carlos-ssa/adaptive-orchestration.git
 ```
 
-Coloque a pasta `adaptive-orchestration` no diretório de skills reconhecido pela sua CLI, conforme a documentação dela. Se ela não tiver descoberta de skills, forneça o [SKILL.md](SKILL.md) e mantenha as referências relativas acessíveis. Recarregue o cliente quando necessário.
+Se sua CLI reconhece skills, instale a pasta no diretório indicado por ela. Se não reconhece, forneça [SKILL.md](SKILL.md) como instrução e mantenha as referências relativas acessíveis. Em ambientes que aceitam invocação por nome:
 
-A skill usa Markdown, frontmatter e referências locais. Ela não inclui um runtime universal: nomes de ferramentas, seleção de modelos, isolamento e persistência variam entre CLIs. O assistente deve verificar as capacidades disponíveis e adaptar o fluxo. Sem subagentes, pode executar diretamente as etapas que conseguir cumprir, informando limitações.
+```text
+Use $adaptive-orchestration para investigar esta falha e verificar a solução.
+```
 
-`agents/openai.yaml` contém metadados opcionais para clientes compatíveis com esse formato. Outros ambientes podem ignorá-lo; as instruções compartilhadas estão no SKILL.md e nas referências.
+O formato de invocação e a descoberta automática dependem da CLI. `agents/openai.yaml` é metadado opcional para clientes compatíveis; outros podem ignorá-lo. Nenhuma instrução central depende desse arquivo.
 
-## Estrutura
+## Adaptação por capacidade
 
-- [SKILL.md](SKILL.md): orientação principal e critérios de uso.
-- [Seleção de modelos](references/model-selection.md): capacidades atuais, fontes oficiais e Artificial Analysis.
-- [Fluxos](references/workflows.md): padrões, revisão independente e retomada.
-- [Contratos](references/contracts.md): autoridade, evidências e validação de decisões.
-- [Fontes](references/sources.md): links de origem e limites da adaptação.
+| Ambiente | Comportamento |
+|---|---|
+| Subagentes, modelo e esforço configuráveis | Delegação com seleções suportadas e contratos explícitos |
+| Subagentes com controles parciais | Usa o controle disponível, registra valores herdados/desconhecidos |
+| Sem subagentes | Executa etapas sequenciais e distingue autoverificação de revisão independente |
+| Sem internet | Usa evidência local, registra lacunas e evita inventar preços |
+| Sem persistência | Mantém estado no recurso disponível, sem afirmar que salvou checkpoint |
 
-## Comportamento
+Portabilidade significa adaptar o procedimento às ferramentas reais. Não existe um runtime universal neste repositório; comportamento nativo em todas as CLIs não foi comprovado.
 
-O principal escolhe um fluxo apropriado e delega blocos verificáveis quando isso ajuda. Por padrão, até dois executores simultâneos, sem subdelegação. Pode usar ponytail e impeccable quando instaladas; elas não são distribuídas neste repositório.
+## Preferências opcionais
 
-Não mantém uma tabela fixa de modelos ou preços. Quando a escolha exigir comparação, consulta o catálogo disponível, a documentação oficial e avaliações relevantes. Modelos futuros entram pelo mesmo processo, sem atualizar instruções globais a cada lançamento.
+A skill não fixa modelos nem quantidade de executores, não impõe limites de tokens e não depende de outras skills. Concorrência segue necessidade, recursos e limites do usuário ou do ambiente.
 
-## Limites
+**Sem subdelegação é o modo padrão:** somente o coordenador cria agentes. O usuário pode habilitá-la com escopo e limites definidos. Isso é uma instrução; bloqueio técnico depende do runtime.
 
-A skill não modifica instruções globais, arquivos de configuração, permissões ou a seleção do modelo principal. Não instala um roteador automático, sandbox ou runtime de workflows e não autoriza ações externas fora do pedido. Não contém limites de tokens.
+Preferências podem ser informadas no pedido ou em `preferences.local.md` na pasta da skill, quando autorizado pelo usuário. Esse arquivo é opcional e ignorado pelo Git. Não o inclua em pacotes públicos. Veja [adaptação ao ambiente](references/environment.md).
 
-Economia real, disponibilidade e qualidade precisam ser verificadas no ambiente de uso. Validação estrutural e cenários simulados não equivalem a um benchmark de produção ou a testes em todas as CLIs.
+## Conteúdo
+
+- [SKILL.md](SKILL.md): ponto de entrada e regras de coordenação.
+- [Ambiente](references/environment.md): capacidades, concorrência e subdelegação.
+- [Modelos](references/model-selection.md): seleção atual, esforço, qualidade, custo e tempo.
+- [Fluxos](references/workflows.md): hipóteses, revisão, geração/seleção, cobertura e retomada.
+- [Contratos](references/contracts.md) e [exemplos preenchidos](references/examples.md).
+- [Fontes](references/sources.md) e [cenários de validação](evals/README.md).
+
+Modelos e preços futuros entram pelo mesmo processo de consulta ao catálogo disponível, documentação oficial e avaliações do domínio. Nenhum ranking fica congelado na skill.
+
+## Limites e licença
+
+A skill não muda configuração global ou modelo principal, instala ferramentas, concede permissões ou autoriza ações externas fora do pedido. Rankings orientam candidatos; economia real depende dos resultados e da cobrança do ambiente.
+
+Distribuída sob a [licença MIT](LICENSE). Conteúdos dos sites de referência pertencem aos respectivos autores; o repositório contém instruções e exemplos originais de adaptação.

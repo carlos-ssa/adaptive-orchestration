@@ -8,6 +8,7 @@ Antes de delegar, forneça:
 Objetivo e resultado esperado:
 Premissas, materiais e referências:
 Modelo e esforço selecionados, se suportados:
+Subdelegação permitida ou proibida:
 Arquivos e escopo de escrita:
 Ações e ferramentas permitidas:
 Dependências e restrições:
@@ -17,7 +18,9 @@ Entrega esperada:
 Skills aplicáveis e seus caminhos, quando disponíveis:
 ```
 
-Adapte a forma ao trabalho; o conteúdo define a autoridade. Dê acesso aos dados necessários. Não trate esse texto como bloqueio técnico de ferramentas. Restrições técnicas devem ser configuradas no ambiente quando disponíveis e necessárias.
+Adapte a forma ao trabalho; o contrato delimita a autoridade já concedida. Dê acesso aos dados necessários. Não trate esse texto como bloqueio técnico de ferramentas. Há um [contrato preenchido](examples.md) para referência.
+
+Distinga parâmetros enviados à ferramenta, valores confirmados pelo runtime e preferências descritas em texto. Defina progresso por evidência do objetivo, como uma verificação que passou ou uma hipótese resolvida; nova mensagem, outro erro ou mais arquivos editados não bastam.
 
 O retorno inclui `status` (`concluido`, `bloqueado` ou `escalar`), achados ou alterações, verificações realizadas e seus resultados, evidências, conflitos e pendências. Evidências devem permitir conferência: arquivo e linha, comando e código de saída, artefato, URL e trecho relevante. Uma afirmação de sucesso do executor não basta.
 
