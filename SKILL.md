@@ -30,7 +30,7 @@ O principal mantém objetivo, julgamento e integração. Delegue blocos verific�
 
 ## Coordene e verifique
 
-- Envie a cada executor contrato, contexto suficiente e fontes acessíveis. Prefira contextos separados: o material bruto fica com o executor e só o relatório volta ao principal. Em escrita paralela, separe arquivos ou use isolamento suportado.
+- Envie a cada executor contrato, contexto suficiente e fontes acessíveis. Prefira contextos separados: o material bruto fica com o executor e só o relatório volta ao principal. Limite o formato e o tamanho do relatório, não o raciocínio ([tamanho da entrega](references/contracts.md#tamanho-da-entrega)). Em escrita paralela, separe arquivos ou use isolamento suportado.
 - Agrupe subtarefas relacionadas num só contrato. Cada executor tem custo fixo (instruções, contexto inicial, relatório); pedidos estreitos demais encarecem o conjunto. Faça direto o que é curto (poucas leituras ou edições). Leitura extensa vai para a faixa 1 mesmo que caiba no contexto: o principal relê o próprio contexto a cada rodada, e material bruto que não será reusado só encarece.
 - Quando o pedido ou o ambiente tiver limite de gasto, registre-o no contrato como teto por executor e pelo conjunto; ao atingi-lo, pare e relate.
 - Trabalhe em partes independentes enquanto espera. Não delegue uma etapa bloqueante só para esperar.
