@@ -19,12 +19,12 @@ O principal mantém objetivo, julgamento e integração. Delegue blocos verific�
 | Faixa | Trabalho | Quem executa |
 |---|---|---|
 | 0 | Contagem, filtro, busca exata, transformação determinística | Script ou ferramenta, sem modelo |
-| 1 | Leitura extensa com resumo, extração, triagem, logs, buscas amplas | Modelo leve, esforço baixo |
-| 2 | Código delimitado com testes, migração mecânica, revisão com critérios | Modelo intermediário, esforço médio |
-| 3 | Ambiguidade, arquitetura, integração, decisão final, segurança, pagamento | Principal, sem delegar |
+| 1 | Leitura extensa que devolve fatos e trechos: resumo, extração, triagem, logs, buscas amplas, inventário de variantes | Modelo leve |
+| 2 | Código delimitado com testes, migração mecânica, revisão que aplica critérios e recomenda | Modelo intermediário |
+| 3 | Ambiguidade, arquitetura, integração, decisão final, segurança, pagamento | Principal decide; só leitura de apoio e revisão independente podem ser delegadas |
 
 - Os modelos de cada faixa vêm do `preferences.local.md`, se existir; senão, do [retrato do Artificial Analysis](references/model-selection.md) cruzado com os modelos que a CLI oferece.
-- Avalie o modelo inteiro para o bloco: requisitos rígidos (contexto, modalidade, ferramentas), capacidade na área do bloco, custo no perfil de uso (entrada, cache, saída e verbosidade) e velocidade. `scripts/aa_rank.py` cruza esses dados; o nome da variante indica o esforço. Se o principal ou o usuário vai esperar o bloco, cite a velocidade na escolha e descarte variantes lentas demais (`--max-ttfat`): o mais barato pode levar minutos até o primeiro token de resposta.
+- Avalie o modelo inteiro para o bloco: requisitos rígidos (contexto, modalidade, ferramentas), capacidade na área do bloco, custo no perfil de uso (entrada, cache, saída e verbosidade) e velocidade. `scripts/aa_rank.py` cruza esses dados; o nome da variante indica o esforço. Escolha uma variante só, a mais barata acima do piso, e cite os dados da escolha (capacidade, piso e custo no perfil). Se o principal ou o usuário vai esperar o bloco, cite a velocidade na escolha e descarte variantes lentas demais (`--max-ttfat`): o mais barato pode levar minutos até o primeiro token de resposta.
 - A capacidade é piso, não desempate: quanto mais caro errar, mais perto do principal. Com verificação automática, tente o candidato barato e refaça só as falhas acima. Registre o resultado de cada bloco para calibrar os pisos ([custo esperado](references/model-selection.md#custo-esperado-o-que-conta-é-a-tarefa-concluída)).
 - Em assinatura ou proxy, o custo é a cota: preserve a do modelo da faixa 3.
 

@@ -49,7 +49,7 @@ O custo de uma chamada delegada é: entrada nova × preço de gravação de cach
 
 Os volumes são ilustrativos. Quando souber o tamanho real, use `--entrada`, `--cache` e `--saida`. Em leitura e sessões longas, o preço de entrada e de cache pesa mais que a verbosidade; em geração, o contrário.
 
-Alguns provedores cobram mais acima de um limite de contexto: segundo o [guia de escolha de modelos da Anthropic](https://claude.dev/blog/which-claude-model-should-you-build-with/#pick-a-model-by-task), prompts acima de 100 mil tokens no Haiku 5.5 custam 5 vezes a taxa base. O retrato não traz essas faixas; o script avisa quando a entrada passa de 100 mil tokens. Nesses casos, confira a tabela do provedor, divida a leitura em blocos menores ou registre a sobretaxa conhecida em `preferences.local.md`.
+Alguns provedores cobram mais acima de um limite de contexto: segundo o [guia de escolha de modelos da Anthropic](https://claude.dev/blog/which-claude-model-should-you-build-with/#pick-a-model-by-task), prompts acima de 100 mil tokens no Haiku 5.5 custam 5 vezes a taxa base. O retrato não traz essas faixas; o script avisa quando a entrada passa de 100 mil tokens, mas não corrige o custo. Sem a tabela do provedor, trate a sobretaxa como desconhecida para qualquer modelo e prefira blocos abaixo de 100 mil tokens. Nesses casos, confira a tabela do provedor, divida a leitura em blocos menores ou registre a sobretaxa conhecida em `preferences.local.md`.
 
 Inclua também os casos difíceis: no mesmo guia, 2 de 20 problemas responderam por 43% do gasto. Um perfil médio subestima tarefas com cauda longa.
 
@@ -81,7 +81,7 @@ O piso depende de quanto custa errar:
 | Verificação manual ou cara, caminho crítico, retrabalho caro | Mais alto: perto do principal na área do bloco |
 | Falha silenciosa possível (erro plausível que ninguém confere) | Não delegue abaixo da faixa 3 sem verificação independente |
 
-Compare também com o próprio principal: `--ref` mostra quanto ele custaria no perfil. Se o candidato economiza pouco, o contrato, a espera e a revisão anulam a diferença; resolva no principal.
+Compare também com o próprio principal: `--ref` mostra quanto ele custaria no perfil. Se o candidato economiza pouco, o contrato, a espera e a revisão anulam a diferença; resolva no principal. Ponto de partida, a calibrar: economia abaixo de 25% no perfil é pouca. Em assinatura, entre candidatos com custo até 10% diferente, prefira o que não gasta a cota do modelo do principal.
 
 Pisos de partida, a calibrar pelos resultados: na faixa 1, Intel suficiente para extrair e resumir (`--min`), a partir do candidato mais barato que já entregou bem; na faixa 2, 85 a 90% do principal na área do bloco (`--ref`, `--pct`) com verificação manual, e 75 a 80% quando testes automáticos cobrem a alteração.
 
