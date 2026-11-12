@@ -22,6 +22,8 @@ A ferramenta `Agent` (antes `Task`) aceita:
 
 Precedência do modelo: parâmetro da chamada → `model` no arquivo do agente → `CLAUDE_CODE_SUBAGENT_MODEL` → modelo principal.
 
+Os apelidos dependem do provedor: segundo o [guia de escolha de modelos](https://claude.dev/blog/which-claude-model-should-you-build-with/#pick-a-model-by-task), `haiku` aponta para o Haiku 5.5 na API da Anthropic, mas para o Haiku 4.5 no Bedrock, Google Cloud, Foundry e Claude Platform on AWS. Confira o modelo efetivo antes de usar o retrato do Artificial Analysis; se precisar de uma versão exata, use o ID completo no arquivo do agente.
+
 ## Agentes próprios
 
 Arquivos `.claude/agents/<nome>.md` (projeto) ou `~/.claude/agents/<nome>.md` (pessoal):

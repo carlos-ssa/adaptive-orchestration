@@ -54,9 +54,11 @@ def main() -> int:
         return 1
     snapshot = json.loads(args.snapshot.read_text(encoding="utf-8"))
     profile = dict(PROFILES[args.perfil])
+    perfil_nome = args.perfil
     for key in ("entrada", "cache", "saida"):
         if getattr(args, key) is not None:
             profile[key] = getattr(args, key)
+            perfil_nome = f"{args.perfil} (ajustado)"
 
     rows = [flatten(m) for m in snapshot["data"]]
     ref = median_verbosity(rows)
@@ -108,7 +110,7 @@ def main() -> int:
     label = caps[cap]
     intel_h, intel_sep = ("", "") if cap == "intel" else (" Intel |", "---|")
     print(
-        f"Retrato de {snapshot['generated_at']} · perfil {args.perfil}: {profile['entrada']:,} tokens de entrada,"
+        f"Retrato de {snapshot['generated_at']} · perfil {perfil_nome}: {profile['entrada']:,} tokens de entrada,"
         f" {profile['cache']:.0%} do cache, {profile['saida']:,} de saída (modelo mediano)"
         f" · capacidade {label} ≥ {args.min:.1f} · ordem por {args.ordem}"
     )
@@ -118,6 +120,9 @@ def main() -> int:
               f" que custaria US$ {num(cost, 4)} neste perfil")
     print(f"Excluídos: {', '.join(f'{v} {k}' for k, v in excluded.items() if v) or 'nenhum'}")
     print()
+    if not candidates:
+        print("Nenhum candidato atende aos filtros. Revise --creators, --min/--pct ou os limites de velocidade.")
+        return 1
     print(f"| Modelo | Slug | {label} |{intel_h} US$ no perfil | {label}/US$ | US$/tarefa | Saída/tarefa (mil) | tok/s | 1º token de resposta (s) |")
     print("|---|---|---|" + intel_sep + "---|" * 6)
     for r in candidates[: args.top]:
@@ -129,6 +134,9 @@ def main() -> int:
             f"{num(r['value'], 0)} | {num(r['per_task'], 4)} | {num(verb, 0)} | {num(r['tps'], 0)} | {num(r['ttfat'], 1)} |"
         )
     print()
+    if profile["entrada"] > 100_000:
+        print("Atenção: acima de 100 mil tokens de entrada, alguns provedores cobram tarifa maior"
+              " (ex.: Haiku 5.5, 5 vezes a base). O retrato não traz essas faixas; confira o provedor.")
     print("Estimativas a partir de preços e verbosidade publicados pelo Artificial Analysis;"
           " confira disponibilidade, contexto, modalidades e ferramentas na CLI antes de escolher.")
     return 0

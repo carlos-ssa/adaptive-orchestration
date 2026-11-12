@@ -14,6 +14,7 @@ Ações e ferramentas permitidas:
 Dependências e restrições:
 Critérios de aceitação e verificações:
 Condição de parada e escalonamento:
+Orçamento, se houver (tokens, cota ou US$; por executor e pelo conjunto):
 Entrega esperada:
 Skills aplicáveis e seus caminhos, quando disponíveis:
 ```
@@ -22,7 +23,7 @@ Adapte a forma ao trabalho; o contrato delimita a autoridade já concedida. Dê 
 
 Distinga parâmetros enviados à ferramenta, valores confirmados pelo runtime e preferências descritas em texto. Defina progresso por evidência do objetivo, como uma verificação que passou ou uma hipótese resolvida; nova mensagem, outro erro ou mais arquivos editados não bastam.
 
-O retorno inclui `status` (`concluido`, `bloqueado` ou `escalar`), achados ou alterações, verificações realizadas e seus resultados, evidências, conflitos e pendências. Evidências devem permitir conferência: arquivo e linha, comando e código de saída, artefato, URL e trecho relevante. Uma afirmação de sucesso do executor não basta.
+O retorno inclui `status` (`concluido`, `bloqueado` ou `escalar`), achados ou alterações, verificações realizadas e seus resultados, evidências, incerteza restante, conflitos, pendências e consumo, quando a CLI o informar. Evidências devem permitir conferência: arquivo e linha, comando e código de saída, artefato, URL e trecho relevante. Uma afirmação de sucesso do executor não basta.
 
 ## Decisão isolada
 

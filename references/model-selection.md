@@ -34,7 +34,7 @@ Os dados ficam em `data/`, na raiz da skill, gerados por `scripts/aa_snapshot.py
 | Verbosidade | US$/tarefa do índice e saída/tarefa estimada | Quanto o modelo gera e raciocina; domina geração e código |
 | Velocidade | tok/s, 1º token, 1º token de resposta, ponta a ponta | Tarefas interativas ou caminho crítico |
 
-O plano gratuito não traz janela de contexto, modalidades (imagem, áudio), avaliações individuais nem uso de ferramentas. Confira esses requisitos na documentação do provedor ou na página do modelo quando a tarefa depender deles. O Artificial Analysis não publica mais Coding Index nem Agentic Index; não os procure.
+O plano gratuito não traz janela de contexto, modalidades (imagem, áudio), avaliações individuais, uso de ferramentas nem preços diferenciados para contexto longo. Confira esses requisitos na documentação do provedor ou na página do modelo quando a tarefa depender deles. O Artificial Analysis não publica mais Coding Index nem Agentic Index; não os procure.
 
 ### Custo por perfil de uso
 
@@ -48,6 +48,10 @@ O custo de uma chamada delegada é: entrada nova × preço de gravação de cach
 | `geracao` | 10 mil | 0% | 20 mil | Texto ou código novo a partir de pouco contexto |
 
 Os volumes são ilustrativos. Quando souber o tamanho real, use `--entrada`, `--cache` e `--saida`. Em leitura e sessões longas, o preço de entrada e de cache pesa mais que a verbosidade; em geração, o contrário.
+
+Alguns provedores cobram mais acima de um limite de contexto: segundo o [guia de escolha de modelos da Anthropic](https://claude.dev/blog/which-claude-model-should-you-build-with/#pick-a-model-by-task), prompts acima de 100 mil tokens no Haiku 5.5 custam 5 vezes a taxa base. O retrato não traz essas faixas; o script avisa quando a entrada passa de 100 mil tokens. Nesses casos, confira a tabela do provedor, divida a leitura em blocos menores ou registre a sobretaxa conhecida em `preferences.local.md`.
+
+Inclua também os casos difíceis: no mesmo guia, 2 de 20 problemas responderam por 43% do gasto. Um perfil médio subestima tarefas com cauda longa.
 
 ### Consulta
 
@@ -79,15 +83,17 @@ O piso depende de quanto custa errar:
 
 Compare também com o próprio principal: `--ref` mostra quanto ele custaria no perfil. Se o candidato economiza pouco, o contrato, a espera e a revisão anulam a diferença; resolva no principal.
 
-Pisos de partida, a calibrar pelos resultados: na faixa 1, Intel suficiente para extrair e resumir (`--min`), a partir do candidato mais barato que já entregou bem; na faixa 2, 85 a 90% do principal na área do bloco (`--ref`, `--pct`).
+Pisos de partida, a calibrar pelos resultados: na faixa 1, Intel suficiente para extrair e resumir (`--min`), a partir do candidato mais barato que já entregou bem; na faixa 2, 85 a 90% do principal na área do bloco (`--ref`, `--pct`) com verificação manual, e 75 a 80% quando testes automáticos cobrem a alteração.
 
 ### Esforço
 
 O esforço faz parte da escolha. Cada variante do retrato (Low, Medium, High, Xhigh, Max) é um par de modelo e esforço com capacidade, verbosidade e latência próprias. Compare variantes entre si: o esforço médio de um modelo maior pode superar o esforço alto de um menor e custar menos, e o esforço máximo costuma multiplicar saída e espera por pouco ganho. Passe à CLI o esforço da variante escolhida quando ela aceitar.
 
+Troque de modelo em pontos naturais da tarefa. O cache pertence ao modelo que o gravou, então a troca reenvia o contexto a preço cheio; descer de modelo perde o raciocínio anterior. Antes de trocar o principal, resuma ou compacte o contexto. Um executor novo sempre começa sem cache: o perfil de custo já cobra a gravação da entrada nova.
+
 ### Calibração
 
-Registre por bloco o modelo, o esforço e o resultado: aceito, corrigido ou refeito. Duas falhas por capacidade na mesma faixa e tipo de tarefa elevam o piso dessa faixa; entregas aceitas com folga permitem testar um candidato mais barato. Falhas por contexto, acesso ou ferramenta não contam: corrija o contrato.
+Registre por bloco o modelo, o esforço, o consumo real quando a CLI o mostrar (tokens, cota ou US$) e o resultado: aceito, corrigido ou refeito. O consumo real substitui a estimativa do perfil nas escolhas seguintes. Duas falhas por capacidade na mesma faixa e tipo de tarefa elevam o piso dessa faixa; entregas aceitas com folga permitem testar um candidato mais barato. Falhas por contexto, acesso ou ferramenta não contam: corrija o contrato.
 
 ## Processo de escolha
 
@@ -106,6 +112,8 @@ Não invente economia nem bloqueie trabalho executável por falta de dados. Peç
 ## Assinatura, créditos e proxy
 
 Em assinatura (Claude Pro/Max, ChatGPT), créditos ou proxy, o custo é cota e limite de uso, não dólar por token. Os custos do retrato continuam úteis como comparação relativa de consumo. Preserve a cota do modelo mais caro: leitura, triagem e extração vão para a faixa 1 mesmo quando o custo em dólar não aparece na conta.
+
+Um teto em dólar dado pelo usuário vira estimativa por executor com `aa_rank.py` (`--entrada`, `--cache`, `--saida` do bloco). Se a CLI não informar o consumo, o executor relata os tokens aproximados lidos e gerados (bytes ÷ 4 serve de ordem de grandeza) e o principal soma e compara com o teto.
 
 ## Esforço e disponibilidade
 
