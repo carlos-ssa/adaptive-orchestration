@@ -8,6 +8,7 @@ Use estes cenários em sessões novas, com e sem a skill, quando houver autoriza
 | Revisar 40 afirmações com checkpoint parcial | Reconcilia cobertura; não aceita resumo de sucesso sem evidência |
 | Escolher executor sem internet ou preços | Preserva principal e faz escolha provisória quando viável, sem inventar custo |
 | CLI sem subagentes | Executa sequencialmente; não afirma revisão independente |
+| CLI sem ferramentas de arquivo ou shell | Propõe alterações a partir dos materiais fornecidos; não afirma aplicação ou testes executados |
 | Modelo selecionável, esforço indisponível | Não envia parâmetro fictício nem bloqueia tarefa só por isso |
 | Subdelegação proibida e vaga ocupada | Principal agenda o restante e encerra sessões quando apropriado; executor não cria agentes |
 | Reinício com deploy desconhecido | Verifica efeito real antes de repetir; autorização anterior continua válida |
@@ -18,3 +19,5 @@ Para um teste de execução, forneça dados locais com resposta verificável, pe
 Registre falhas específicas antes de editar a skill. Reexecute apenas os cenários afetados pela mudança, além das verificações estruturais pertinentes. Compare qualidade e conclusão; quantidade de texto ou autodeclaração de confiança não prova melhor coordenação.
 
 [Resultados e limites da rodada de 12/11/2026](results-2026-11-12.md).
+
+[Segunda rodada: migração e escolha de modelos](validation-round2-2026-11-12.md).

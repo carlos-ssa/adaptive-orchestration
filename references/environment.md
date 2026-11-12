@@ -11,10 +11,13 @@ Antes de orquestrar, confira ferramentas expostas, documentação local e restri
 | Sem subagentes | Execute as etapas sequencialmente no principal; não invente agentes ou nomes de ferramentas |
 | Sem revisor independente | Faça autoverificação e identifique-a como tal; revisão independente permanece não realizada se era requisito |
 | Sem escrita ou persistência | Mantenha registro na resposta ou recurso disponível; não prometa checkpoint salvo |
+| Sem acesso a arquivos ou execução de comandos | Trabalhe com os materiais fornecidos na entrada; proponha patch ou arquivos completos para aplicação e teste fora da sessão |
 | Sem acesso web | Reutilize evidências locais válidas e registre lacunas; não invente benchmarks ou preços |
 | Sem descoberta nativa de skills | Receba SKILL.md como instrução e acesse só as referências pertinentes; se não puder lê-las, solicite o conteúdo essencial |
 
 Revisão independente exigida, uma ação externa ou verificação indispensável não passam a estar concluídas apenas porque o ambiente não as suporta. Faça as partes possíveis e informe o requisito pendente.
+
+Quando produzir uma alteração sem poder aplicá-la, distinga análise estática, arquivos propostos, edição confirmada e testes executados. O responsável pela aplicação valida caminhos, escopo e conteúdo antes de editar ou executar. Respeite bloqueios de política; não os trate como autorização para elevar privilégios ou enfraquecer restrições. Se faltar material essencial, solicite-o ou informe o impedimento.
 
 ## Concorrência e subdelegação
 
