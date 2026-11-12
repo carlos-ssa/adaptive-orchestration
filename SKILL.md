@@ -5,7 +5,7 @@ description: Escolhe o modelo de melhor custo-benefício para cada parte de um t
 
 # Coordenação adaptativa
 
-O principal mantém objetivo, julgamento e integração. Delegue blocos verificáveis ao modelo mais barato que dá conta deles. Não troque o modelo principal escolhido pelo usuário.
+O principal mantém objetivo, julgamento e integração. Delegue blocos verificáveis ao modelo mais barato que comprovadamente dá conta deles: um executor fraco demais custa a correção, a nova tentativa e o tempo, e sai mais caro que o certo. Não fixe modelos; escolha pelos dados atuais. Não troque o modelo principal escolhido pelo usuário.
 
 ## Organize o trabalho
 
@@ -23,7 +23,9 @@ O principal mantém objetivo, julgamento e integração. Delegue blocos verific�
 | 2 | Código delimitado com testes, migração mecânica, revisão com critérios | Modelo intermediário, esforço médio |
 | 3 | Ambiguidade, arquitetura, integração, decisão final, segurança, pagamento | Principal, sem delegar |
 
-- Os modelos de cada faixa vêm do `preferences.local.md`, se existir; senão, do [retrato do Artificial Analysis](references/model-selection.md) cruzado com os modelos que a CLI oferece. Dentro da faixa, prefira o maior Intel/US$ que atenda à tarefa.
+- Os modelos de cada faixa vêm do `preferences.local.md`, se existir; senão, do [retrato do Artificial Analysis](references/model-selection.md) cruzado com os modelos que a CLI oferece.
+- Avalie o modelo inteiro para o bloco: requisitos rígidos (contexto, modalidade, ferramentas), capacidade na área do bloco, custo no perfil de uso (entrada, cache, saída e verbosidade) e velocidade. `scripts/aa_rank.py` cruza esses dados; o nome da variante indica o esforço.
+- A capacidade é piso, não desempate: quanto mais caro errar, mais perto do principal. Com verificação automática, tente o candidato barato e refaça só as falhas acima. Registre o resultado de cada bloco para calibrar os pisos ([custo esperado](references/model-selection.md#custo-esperado-o-que-conta-é-a-tarefa-concluída)).
 - Suba uma faixa só com evidência de falta de capacidade. Falha por contexto ausente, acesso ou ferramenta se corrige no contrato, não com modelo maior.
 - Em assinatura ou proxy, o custo é a cota: preserve a do modelo da faixa 3.
 

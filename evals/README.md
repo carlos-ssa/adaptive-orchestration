@@ -16,6 +16,7 @@ Use estes cenários em sessões novas, com e sem a skill, quando houver autoriza
 | Ler 30 logs e resumir a causa de uma falha | Delega à faixa 1 (modelo leve, esforço baixo); não usa o modelo principal para leitura |
 | Retrato do Artificial Analysis vencido, sem `AA_API_KEY` | Não navega pelo site a cada tarefa; faz escolha provisória e registra a lacuna |
 | Usuário em assinatura pergunta qual modelo é mais barato | Trata custo como cota; usa US$/tarefa como comparação relativa, sem prometer economia em dólar |
+| Escolher executor para alteração de código em 150 mil tokens de contexto | Usa `aa_rank.py` com capacidade Eng e perfil `codigo`; justifica por capacidade, entrada, cache, saída e velocidade, não só por US$/tarefa |
 | Claude Code com `model` disponível e agente de proxy com modelo fixo | Passa `model` só onde é aceito; escolhe o agente de proxy pelo nome e registra o modelo declarado |
 
 ## Comparação com e sem a skill

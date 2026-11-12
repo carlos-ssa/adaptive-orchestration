@@ -17,32 +17,95 @@ O modelo mais barato por token pode consumir mais raciocínio e tentativas; o ma
 
 ## Retrato do Artificial Analysis
 
-Os dados ficam em `data/aa-snapshot.md`, na raiz da skill, gerado por `scripts/aa_snapshot.py` a partir da [API gratuita](https://artificialanalysis.ai/data-api/docs) (exige `AA_API_KEY`; 100 requisições por dia; atribuição obrigatória; não redistribuir).
+Os dados ficam em `data/`, na raiz da skill, gerados por `scripts/aa_snapshot.py` a partir da [API gratuita](https://artificialanalysis.ai/data-api/docs) (exige `AA_API_KEY`; 100 requisições por dia; atribuição obrigatória; não redistribuir). `aa-snapshot.json` guarda todos os campos; `aa-snapshot.md` traz tabelas de capacidade, custo e velocidade para leitura humana.
 
-1. Rode `python scripts/aa_snapshot.py --check` a partir da raiz da skill. Código 0: use o arquivo existente.
-2. Se estiver vencido ou ausente e houver rede e chave, rode `python scripts/aa_snapshot.py`. Sem chave ou rede, não navegue pelo site a cada tarefa: use `preferences.local.md` ou o conhecimento disponível como escolha provisória e registre a lacuna.
-3. Leia só a tabela. As colunas que importam:
-   - **US$/tarefa**: custo médio por tarefa do Intelligence Index, já com tokens de raciocínio. É a melhor medida de custo real; preço por token engana quando um modelo raciocina muito mais.
-   - **Intel/US$**: pontos de índice por dólar de tarefa. É o critério de desempate dentro de uma faixa.
-   - **Intel** para capacidade geral; **Eng** (Engineering Index) como sinal adicional para trabalho técnico.
-   - **tok/s** e **TTFAT** quando o tempo de resposta importa.
-4. Cruze a tabela com os modelos que a CLI realmente oferece. Nomes do Artificial Analysis e apelidos da CLI diferem; registre o mapeamento em `preferences.local.md` para não refazê-lo.
+1. Rode `python scripts/aa_snapshot.py --check` a partir da raiz da skill. Código 0: use o retrato existente.
+2. Se estiver vencido ou ausente e houver rede e chave, rode `python scripts/aa_snapshot.py --creators <provedores da CLI>` (por exemplo `anthropic,openai`; o filtro vale só para o Markdown). Sem chave ou rede, não navegue pelo site a cada tarefa: use `preferences.local.md` ou o conhecimento disponível como escolha provisória e registre a lacuna.
+3. Para escolher, rode `scripts/aa_rank.py` em vez de ler as tabelas inteiras (veja abaixo).
+4. Cruze o resultado com os modelos que a CLI realmente oferece. Nomes do Artificial Analysis e apelidos da CLI diferem; registre o mapeamento em `preferences.local.md` para não refazê-lo.
 
-O Artificial Analysis não publica mais Coding Index nem Agentic Index; não os procure. Para domínios específicos, abra a página do modelo no site só quando a decisão depender disso.
+### O que o retrato informa
+
+| Dimensão | Campos | Uso |
+|---|---|---|
+| Capacidade geral | Intel (Intelligence Index) | Piso de qualidade para qualquer bloco |
+| Capacidade por área | Eng (engenharia), Fin (finanças e contabilidade), Estr (estratégia e operações), Jur (jurídico), Saúde, Econ (economia) | Piso na área do bloco; Eng para código e trabalho técnico |
+| Preço por token | Entrada, cache (leitura), cache (gravação), saída, em US$/1M | Custo de contexto: domina leitura extensa e sessões longas |
+| Verbosidade | US$/tarefa do índice e saída/tarefa estimada | Quanto o modelo gera e raciocina; domina geração e código |
+| Velocidade | tok/s, 1º token, 1º token de resposta, ponta a ponta | Tarefas interativas ou caminho crítico |
+
+O plano gratuito não traz janela de contexto, modalidades (imagem, áudio), avaliações individuais nem uso de ferramentas. Confira esses requisitos na documentação do provedor ou na página do modelo quando a tarefa depender deles. O Artificial Analysis não publica mais Coding Index nem Agentic Index; não os procure.
+
+### Custo por perfil de uso
+
+O custo de uma chamada delegada é: entrada nova × preço de gravação de cache (ou de entrada, sem cache) + entrada em cache × preço de leitura de cache + saída × preço de saída. A saída de cada modelo é escalada pela verbosidade dele em relação à mediana do retrato, porque modelos que raciocinam mais geram mais tokens para o mesmo pedido.
+
+| Perfil | Entrada | Cache | Saída (modelo mediano) | Exemplo |
+|---|---|---|---|---|
+| `leitura` | 200 mil | 50% | 4 mil | Ler arquivos ou logs e devolver resumo |
+| `codigo` | 150 mil | 85% | 15 mil | Alteração delimitada com testes, várias rodadas |
+| `agente` | 1 milhão | 90% | 30 mil | Sessão longa com contexto reenviado |
+| `geracao` | 10 mil | 0% | 20 mil | Texto ou código novo a partir de pouco contexto |
+
+Os volumes são ilustrativos. Quando souber o tamanho real, use `--entrada`, `--cache` e `--saida`. Em leitura e sessões longas, o preço de entrada e de cache pesa mais que a verbosidade; em geração, o contrário.
+
+### Consulta
+
+```sh
+python scripts/aa_rank.py --perfil leitura --creators anthropic,openai --min 15
+python scripts/aa_rank.py --perfil codigo --capacidade eng --ref <slug do principal> --pct 90
+python scripts/aa_rank.py --perfil agente --min 45 --max-ttfat 30
+```
+
+`--capacidade` escolhe o índice da área (padrão: Intel) e `--min` define o piso nele. `--ref` e `--pct` definem o piso como porcentagem da nota do principal na mesma área e mostram quanto o principal custaria no perfil; assim o piso acompanha novas versões sem fixar nomes. Com `--min`, a lista vem ordenada pelo menor custo no perfil; sem ele, por pontos por dólar (`--ordem` altera). `--max-ttfat` e `--min-tps` excluem modelos lentos. O nome da variante (Low, Medium, High, Xhigh, Max) indica o esforço a passar para a CLI.
+
+## Custo esperado: o que conta é a tarefa concluída
+
+Nenhum modelo fica fixo na skill. Modelos novos entram pelo retrato e são avaliados pelos mesmos critérios. O objetivo é o menor custo para concluir o bloco com o resultado aceito, não o menor custo por chamada:
+
+custo esperado = custo da tentativa + chance de falha × (correção, nova tentativa e revisão do principal) + tempo perdido
+
+- Um modelo barato que não dá conta da tarefa desperdiça tokens, cota e, principalmente, tempo: a entrega precisa ser revista, corrigida ou refeita, muitas vezes pelo modelo caro.
+- Um modelo caro em tarefa simples desperdiça cota sem ganho de qualidade.
+- Por isso a capacidade é filtro, não critério de desempate: primeiro o piso, depois o custo. Na dúvida entre dois candidatos, fique com o que tem margem acima do piso.
+
+O piso depende de quanto custa errar:
+
+| Situação do bloco | Piso |
+|---|---|
+| Verificação automática e barata (testes, script, contagem) | Mais baixo: tente o candidato barato e refaça só as falhas com esforço ou faixa maior |
+| Verificação manual ou cara, caminho crítico, retrabalho caro | Mais alto: perto do principal na área do bloco |
+| Falha silenciosa possível (erro plausível que ninguém confere) | Não delegue abaixo da faixa 3 sem verificação independente |
+
+Compare também com o próprio principal: `--ref` mostra quanto ele custaria no perfil. Se o candidato economiza pouco, o contrato, a espera e a revisão anulam a diferença; resolva no principal.
+
+Pisos de partida, a calibrar pelos resultados: na faixa 1, Intel suficiente para extrair e resumir (`--min`), a partir do candidato mais barato que já entregou bem; na faixa 2, 85 a 90% do principal na área do bloco (`--ref`, `--pct`).
+
+### Esforço
+
+O esforço faz parte da escolha. Cada variante do retrato (Low, Medium, High, Xhigh, Max) é um par de modelo e esforço com capacidade, verbosidade e latência próprias. Compare variantes entre si: o esforço médio de um modelo maior pode superar o esforço alto de um menor e custar menos, e o esforço máximo costuma multiplicar saída e espera por pouco ganho. Passe à CLI o esforço da variante escolhida quando ela aceitar.
+
+### Calibração
+
+Registre por bloco o modelo, o esforço e o resultado: aceito, corrigido ou refeito. Duas falhas por capacidade na mesma faixa e tipo de tarefa elevam o piso dessa faixa; entregas aceitas com folga permitem testar um candidato mais barato. Falhas por contexto, acesso ou ferramenta não contam: corrija o contrato.
 
 ## Processo de escolha
 
-1. Liste os candidatos que a CLI expõe e os parâmetros suportados. Um proxy pode fixar o modelo servido.
-2. Classifique o bloco na faixa do [SKILL.md](../SKILL.md) e use o mapeamento de `preferences.local.md` quando existir.
-3. Sem mapeamento: na faixa 1, escolha o candidato com menor US$/tarefa entre os que têm Intel razoável para a tarefa; na faixa 2, o maior Intel/US$ entre os candidatos próximos do principal em Intel. Prefira o modelo de família igual ao principal quando a diferença for pequena: ferramentas e formato de resposta costumam ser mais estáveis.
-4. Registre no trabalho: modelo, esforço, data do retrato e motivo em uma linha. Empates arredondados não provam equivalência.
-5. Preserve a seleção explícita do usuário, inclusive a do principal; a skill não autoriza trocá-la.
+Analise o modelo como um todo para o bloco, nesta ordem:
+
+1. **Requisitos rígidos.** Liste os candidatos que a CLI expõe e os parâmetros suportados. Descarte os que não atendem a contexto, modalidade, ferramentas ou política de dados exigidos. Um proxy pode fixar o modelo servido.
+2. **Capacidade na área.** Classifique o bloco na faixa do [SKILL.md](../SKILL.md) e defina o piso no índice relevante conforme o custo de errar (seção anterior): na faixa 1, Intel suficiente para extrair e resumir; na faixa 2, perto do principal na área do bloco (Eng para código). Use os critérios de `preferences.local.md` quando existirem.
+3. **Custo no perfil.** Entre os que atingem o piso, escolha o menor custo no perfil de uso do bloco, não só o US$/tarefa nem só o preço por token. Variantes do mesmo modelo concorrem entre si: a escolhida define também o esforço.
+4. **Velocidade.** Desempate por tok/s e 1º token de resposta quando o bloco estiver no caminho crítico ou for interativo.
+5. Prefira a família do principal quando a diferença for pequena: ferramentas e formato de resposta costumam ser mais estáveis. Diferenças pequenas e arredondadas não provam equivalência.
+6. Registre no trabalho: modelo, esforço, perfil, piso, data do retrato e motivo em uma linha; depois, o resultado para a calibração.
+7. Preserve a seleção explícita do usuário, inclusive a do principal; a skill não autoriza trocá-la.
 
 Não invente economia nem bloqueie trabalho executável por falta de dados. Peça informação quando ela for essencial ou a alternativa exigir nova autorização.
 
 ## Assinatura, créditos e proxy
 
-Em assinatura (Claude Pro/Max, ChatGPT), créditos ou proxy, o custo é cota e limite de uso, não dólar por token. O US$/tarefa continua útil como comparação relativa de consumo. Preserve a cota do modelo mais caro: leitura, triagem e extração vão para a faixa 1 mesmo quando o custo em dólar não aparece na conta.
+Em assinatura (Claude Pro/Max, ChatGPT), créditos ou proxy, o custo é cota e limite de uso, não dólar por token. Os custos do retrato continuam úteis como comparação relativa de consumo. Preserve a cota do modelo mais caro: leitura, triagem e extração vão para a faixa 1 mesmo quando o custo em dólar não aparece na conta.
 
 ## Esforço e disponibilidade
 

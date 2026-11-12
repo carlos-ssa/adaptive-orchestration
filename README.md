@@ -21,10 +21,16 @@ A escolha de modelos usa um retrato local do [Artificial Analysis](https://artif
 
 ```sh
 export AA_API_KEY=...   # chave gratuita em artificialanalysis.ai
-python scripts/aa_snapshot.py
+python scripts/aa_snapshot.py --creators anthropic,openai
 ```
 
-O script usa só a biblioteca padrão do Python e grava `data/aa-snapshot.md` (ignorado pelo Git). Ele só chama a API se o retrato tiver mais de 7 dias. A métrica central é o custo por tarefa do Intelligence Index, que já inclui os tokens de raciocínio. Sem chave, a skill continua funcionando com escolhas provisórias. Os dados exigem atribuição ao Artificial Analysis e não devem ser redistribuídos.
+Os scripts usam só a biblioteca padrão do Python. O retrato fica em `data/` (ignorado pelo Git) e só é atualizado se tiver mais de 7 dias. Para escolher um modelo, cruze capacidade na área, custo no perfil de uso (entrada, cache, saída e verbosidade) e velocidade:
+
+```sh
+python scripts/aa_rank.py --perfil codigo --capacidade eng --min 50 --creators anthropic,openai
+```
+
+Sem chave, a skill continua funcionando com escolhas provisórias. Os dados exigem atribuição ao Artificial Analysis e não devem ser redistribuídos.
 
 ## Como escolhe
 
