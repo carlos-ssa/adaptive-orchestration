@@ -1,54 +1,59 @@
 # Adaptive Orchestration
 
-Skill em português para coordenação adaptativa em CLIs e assistentes de IA: escolher modelos por tarefa, delegar blocos verificáveis e integrar resultados com evidências. Combina [três guias de origem e Artificial Analysis](references/sources.md).
+Skill em português para escolher o modelo de melhor custo-benefício em cada parte de um trabalho e coordenar subagentes com contratos e verificação. Funciona no Claude Code e no Codex com o mesmo `SKILL.md`. Combina [três guias de origem e o Artificial Analysis](references/sources.md).
 
-## Uso em diferentes CLIs
+## Instalação
+
+| CLI | Pasta pessoal | Pasta do projeto | Invocação |
+|---|---|---|---|
+| Claude Code | `~/.claude/skills/adaptive-orchestration/` | `.claude/skills/adaptive-orchestration/` | `/adaptive-orchestration <pedido>` |
+| Codex | `~/.agents/skills/adaptive-orchestration/` | `.agents/skills/adaptive-orchestration/` | `$adaptive-orchestration <pedido>` |
 
 ```sh
-git clone https://github.com/carlos-ssa/adaptive-orchestration.git
+git clone https://github.com/carlos-ssa/adaptive-orchestration.git ~/.claude/skills/adaptive-orchestration
 ```
 
-Se sua CLI reconhece skills, instale a pasta no diretório indicado por ela. Se não reconhece, forneça [SKILL.md](SKILL.md) como instrução e mantenha as referências relativas acessíveis. Em ambientes que aceitam invocação por nome:
+Troque o destino para a pasta do Codex se for o caso. Em outra CLI, forneça [SKILL.md](SKILL.md) como instrução e mantenha as referências acessíveis. `agents/openai.yaml` só é lido pelo Codex.
 
-```text
-Use $adaptive-orchestration para investigar esta falha e verificar a solução.
+## Dados de custo-benefício
+
+A escolha de modelos usa um retrato local do [Artificial Analysis](https://artificialanalysis.ai/), gerado pela API gratuita:
+
+```sh
+export AA_API_KEY=...   # chave gratuita em artificialanalysis.ai
+python scripts/aa_snapshot.py --creators anthropic,openai
 ```
 
-O formato de invocação e a descoberta automática dependem da CLI. `agents/openai.yaml` é metadado opcional para clientes compatíveis; outros podem ignorá-lo. Nenhuma instrução central depende desse arquivo.
+Os scripts usam só a biblioteca padrão do Python. O retrato fica em `data/` (ignorado pelo Git) e só é atualizado se tiver mais de 7 dias. Para escolher um modelo, cruze capacidade na área, custo no perfil de uso (entrada, cache, saída e verbosidade) e velocidade:
 
-## Adaptação por capacidade
+```sh
+python scripts/aa_rank.py --perfil codigo --capacidade eng --min 50 --creators anthropic,openai
+```
 
-| Ambiente | Comportamento |
-|---|---|
-| Subagentes, modelo e esforço configuráveis | Delegação com seleções suportadas e contratos explícitos |
-| Subagentes com controles parciais | Usa o controle disponível, registra valores herdados/desconhecidos |
-| Sem subagentes | Executa etapas sequenciais e distingue autoverificação de revisão independente |
-| Sem internet | Usa evidência local, registra lacunas e evita inventar preços |
-| Sem persistência | Mantém estado no recurso disponível, sem afirmar que salvou checkpoint |
+Sem chave, a skill continua funcionando com escolhas provisórias. Os dados exigem atribuição ao Artificial Analysis e não devem ser redistribuídos.
 
-Portabilidade significa adaptar o procedimento às ferramentas reais. Não existe um runtime universal neste repositório; comportamento nativo em todas as CLIs não foi comprovado.
+## Como escolhe
 
-## Preferências opcionais
+| Faixa | Trabalho | Executor |
+|---|---|---|
+| 0 | Contagem, filtro, busca exata | Script, sem modelo |
+| 1 | Leitura extensa, extração, triagem | Modelo leve, esforço baixo |
+| 2 | Código delimitado, migração mecânica, revisão | Modelo intermediário, esforço médio |
+| 3 | Ambiguidade, arquitetura, integração, decisão | Principal |
 
-A skill não fixa modelos nem quantidade de executores, não impõe limites de tokens e não depende de outras skills. Concorrência segue necessidade, recursos e limites do usuário ou do ambiente.
-
-**Sem subdelegação é o modo padrão:** somente o coordenador cria agentes. O usuário pode habilitá-la com escopo e limites definidos. Isso é uma instrução; bloqueio técnico depende do runtime.
-
-Preferências podem ser informadas no pedido ou em `preferences.local.md` na pasta da skill, quando autorizado pelo usuário. Esse arquivo é opcional e ignorado pelo Git. Não o inclua em pacotes públicos. Veja [adaptação ao ambiente](references/environment.md).
+Os modelos de cada faixa vêm de `preferences.local.md` (opcional, ignorado pelo Git) ou do retrato cruzado com o que a CLI oferece. Em assinatura, o custo é cota, e a skill preserva a do modelo mais caro. Veja [seleção de modelos](references/model-selection.md) e o [exemplo de preferências](references/environment.md#preferências-opcionais).
 
 ## Conteúdo
 
-- [SKILL.md](SKILL.md): ponto de entrada e regras de coordenação.
-- [Ambiente](references/environment.md): capacidades, concorrência e subdelegação.
-- [Modelos](references/model-selection.md): seleção atual, esforço, qualidade, custo e tempo.
-- [Fluxos](references/workflows.md): hipóteses, revisão, geração/seleção, cobertura e retomada.
-- [Contratos](references/contracts.md) e [exemplos preenchidos](references/examples.md).
+- [SKILL.md](SKILL.md): ponto de entrada, faixas e regras de coordenação.
+- [Claude Code](references/claude-code.md) e [Codex](references/codex.md): parâmetros de delegação de cada CLI.
+- [Modelos](references/model-selection.md): retrato, métricas e escolha sem dados.
+- [Ambiente](references/environment.md): outras CLIs, concorrência, subdelegação e preferências.
+- [Fluxos](references/workflows.md), [contratos](references/contracts.md) e [exemplos](references/examples.md).
 - [Fontes](references/sources.md) e [cenários de validação](evals/README.md).
-
-Modelos e preços futuros entram pelo mesmo processo de consulta ao catálogo disponível, documentação oficial e avaliações do domínio. Nenhum ranking fica congelado na skill.
 
 ## Limites e licença
 
-A skill não muda configuração global ou modelo principal, instala ferramentas, concede permissões ou autoriza ações externas fora do pedido. Rankings orientam candidatos; economia real depende dos resultados e da cobrança do ambiente.
+A skill não muda configuração global nem o modelo principal, não instala ferramentas e não autoriza ações externas fora do pedido. Rankings orientam candidatos; a economia real depende dos resultados e da cobrança do ambiente. Execução nativa no Claude Code ainda não foi validada; veja [evals](evals/README.md).
 
-Distribuída sob a [licença MIT](LICENSE). Conteúdos dos sites de referência pertencem aos respectivos autores; o repositório contém instruções e exemplos originais de adaptação.
+Distribuída sob a [licença MIT](LICENSE). Conteúdos dos sites de referência pertencem aos respectivos autores.

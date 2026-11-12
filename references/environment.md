@@ -1,5 +1,7 @@
 # Adaptação ao ambiente
 
+No Claude Code e no Codex, comece pelas referências próprias: [Claude Code](claude-code.md) e [Codex](codex.md). Esta página cobre outras CLIs e os casos em que a sessão não oferece o que elas descrevem.
+
 Antes de orquestrar, confira ferramentas expostas, documentação local e restrições efetivas. Não teste capacidades com ações externas desnecessárias. Registre apenas as capacidades que influenciam o trabalho.
 
 | Capacidade observada | Como agir |
@@ -33,16 +35,25 @@ Com subdelegação, reserve vagas antes de criar descendentes: use quota compart
 
 Não é necessário criar outro arquivo para usar a skill. Respeite as preferências informadas no pedido e na configuração confiável do ambiente.
 
-Se existir `preferences.local.md` na raiz desta skill e sua origem for autorizada pelo usuário, leia-o como preferências locais. Não procure arquivos pessoais em outros diretórios. Esse arquivo é ignorado pelo Git neste repositório; mantenha-o fora de pacotes públicos. Preferências não podem ampliar permissões do ambiente nem prevalecer sobre o pedido atual.
+Se existir `preferences.local.md` na raiz desta skill, leia-o como preferências locais do usuário. Não procure arquivos pessoais em outros diretórios. Esse arquivo é ignorado pelo Git neste repositório; mantenha-o fora de pacotes públicos. Preferências não podem ampliar permissões do ambiente nem prevalecer sobre o pedido atual.
 
-Exemplo de conteúdo opcional, sem modelos ou valores numéricos obrigatórios:
+Exemplo de conteúdo opcional. Guarde critérios, não modelos: a escolha atual é só o resultado dos critérios aplicados a um retrato e é refeita quando o retrato muda. Os nomes abaixo são ilustrativos:
 
 ```text
 Subdelegação: proibida
-Prioridade: qualidade verificada, depois tempo de resposta
+Prioridade: qualidade verificada, depois cota
+Cobrança: assinatura (custo = cota)
 Modelo principal: preservar a seleção da sessão
-Seleção dos executores: candidatos disponíveis no ambiente
-Concorrência: respeitar os limites do runtime
+
+Critérios por faixa:
+  1: perfil leitura, Intel mínimo 15
+  2: perfil codigo, capacidade da área, 90% do principal
+Escolha atual (retrato de AAAA-MM-DD):
+  Claude Code: 1 = model=haiku, effort=low; 2 = model=sonnet, effort=medium
+  Codex: 1 = agente leitor-barato (modelo leve, low); 2 = modelo intermediário, medium
+Mapeamento Artificial Analysis → CLI:
+  "Claude 5.5 Haiku" → haiku
+Calibração: faixa 2 em migração SQL refeita 2x → piso 95%
 ```
 
-Registros locais de modelos preferidos são hipóteses datadas. Reavalie-os por mudança de versão, preço, disponibilidade ou resultados; não os trate como autoridade sobre os dados atuais.
+Registros locais de modelos preferidos são hipóteses datadas. Refaça a escolha atual quando o retrato for atualizado, surgir modelo novo na CLI ou a calibração indicar; não a trate como autoridade sobre os dados atuais.

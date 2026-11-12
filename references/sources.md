@@ -13,11 +13,17 @@ Esta skill é uma adaptação original dos conceitos abaixo, não uma cópia das
 
 Escolha a documentação da CLI e do provedor realmente utilizados. Não restrinja a seleção a uma empresa. Os links abaixo oferecem pontos de partida, não uma lista exclusiva de modelos ou ambientes suportados.
 
-- [Claude Code](https://code.claude.com/docs)
+- [Claude Code](https://code.claude.com/docs): [skills](https://code.claude.com/docs/en/skills) e [subagentes](https://code.claude.com/docs/en/sub-agents)
 - [Claude Platform](https://platform.claude.com/docs)
+
+Artificial Analysis:
+
+- [Data API](https://artificialanalysis.ai/data-api/docs): endpoints, planos, limites e atribuição
+- [Metodologia do Intelligence Index](https://artificialanalysis.ai/methodology/intelligence-benchmarking)
 
 Exemplos para ambientes OpenAI:
 
+- [Skills no Codex](https://learn.chatgpt.com/docs/build-skills)
 - [Modelos no Codex](https://learn.chatgpt.com/docs/models)
 - [Subagentes e precedência de configuração](https://learn.chatgpt.com/docs/agent-configuration/subagents)
 - [Referência de configuração](https://learn.chatgpt.com/docs/config-file/config-reference)
