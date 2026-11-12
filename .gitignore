@@ -1,3 +1,4 @@
 preferences.local.md
 __pycache__/
 *.pyc
+data/

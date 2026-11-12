@@ -15,15 +15,34 @@ Use esta referência quando houver uma escolha real de executor ou revisão de m
 
 O modelo mais barato por token pode consumir mais raciocínio e tentativas; o mais capaz pode terminar antes. Verifique o resultado por tarefa.
 
+## Retrato do Artificial Analysis
+
+Os dados ficam em `data/aa-snapshot.md`, na raiz da skill, gerado por `scripts/aa_snapshot.py` a partir da [API gratuita](https://artificialanalysis.ai/data-api/docs) (exige `AA_API_KEY`; 100 requisições por dia; atribuição obrigatória; não redistribuir).
+
+1. Rode `python scripts/aa_snapshot.py --check` a partir da raiz da skill. Código 0: use o arquivo existente.
+2. Se estiver vencido ou ausente e houver rede e chave, rode `python scripts/aa_snapshot.py`. Sem chave ou rede, não navegue pelo site a cada tarefa: use `preferences.local.md` ou o conhecimento disponível como escolha provisória e registre a lacuna.
+3. Leia só a tabela. As colunas que importam:
+   - **US$/tarefa**: custo médio por tarefa do Intelligence Index, já com tokens de raciocínio. É a melhor medida de custo real; preço por token engana quando um modelo raciocina muito mais.
+   - **Intel/US$**: pontos de índice por dólar de tarefa. É o critério de desempate dentro de uma faixa.
+   - **Intel** para capacidade geral; **Eng** (Engineering Index) como sinal adicional para trabalho técnico.
+   - **tok/s** e **TTFAT** quando o tempo de resposta importa.
+4. Cruze a tabela com os modelos que a CLI realmente oferece. Nomes do Artificial Analysis e apelidos da CLI diferem; registre o mapeamento em `preferences.local.md` para não refazê-lo.
+
+O Artificial Analysis não publica mais Coding Index nem Agentic Index; não os procure. Para domínios específicos, abra a página do modelo no site só quando a decisão depender disso.
+
 ## Processo de escolha
 
-1. Identifique candidatos disponíveis e parâmetros suportados. Distinga catálogo local, acesso remoto e identidade efetivamente confirmada; um proxy pode não servir o modelo esperado.
-2. Quando necessário e permitido, consulte [Artificial Analysis](https://artificialanalysis.ai/) e abra as páginas das variantes exatas. Priorize avaliações do domínio; ranking geral e snippets não bastam.
-3. Confirme nomes, esforços, ferramentas e preços na documentação oficial atual do provedor e da CLI. Veja pontos de partida em [fontes](sources.md).
-4. Registre data, versão, provedor, esforço/modo, metodologia, URLs e lacunas, conforme o [exemplo](examples.md). Compare qualidade, custo e tempo. Empates arredondados não provam equivalência ou significância estatística.
-5. Escolha o candidato que atende aos critérios da tarefa. Preserve a seleção explícita do usuário, inclusive a do principal; a skill não autoriza trocá-la.
+1. Liste os candidatos que a CLI expõe e os parâmetros suportados. Um proxy pode fixar o modelo servido.
+2. Classifique o bloco na faixa do [SKILL.md](../SKILL.md) e use o mapeamento de `preferences.local.md` quando existir.
+3. Sem mapeamento: na faixa 1, escolha o candidato com menor US$/tarefa entre os que têm Intel razoável para a tarefa; na faixa 2, o maior Intel/US$ entre os candidatos próximos do principal em Intel. Prefira o modelo de família igual ao principal quando a diferença for pequena: ferramentas e formato de resposta costumam ser mais estáveis.
+4. Registre no trabalho: modelo, esforço, data do retrato e motivo em uma linha. Empates arredondados não provam equivalência.
+5. Preserve a seleção explícita do usuário, inclusive a do principal; a skill não autoriza trocá-la.
 
-Se fontes ou preços estiverem indisponíveis, use evidências locais e preferências autorizadas para uma escolha provisória. Não invente economia nem bloqueie trabalho executável apenas por ausência de ranking. Peça informação quando ela for essencial ou a alternativa exigir nova autorização.
+Não invente economia nem bloqueie trabalho executável por falta de dados. Peça informação quando ela for essencial ou a alternativa exigir nova autorização.
+
+## Assinatura, créditos e proxy
+
+Em assinatura (Claude Pro/Max, ChatGPT), créditos ou proxy, o custo é cota e limite de uso, não dólar por token. O US$/tarefa continua útil como comparação relativa de consumo. Preserve a cota do modelo mais caro: leitura, triagem e extração vão para a faixa 1 mesmo quando o custo em dólar não aparece na conta.
 
 ## Esforço e disponibilidade
 
