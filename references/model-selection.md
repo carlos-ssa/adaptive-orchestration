@@ -61,7 +61,7 @@ python scripts/aa_rank.py --perfil codigo --capacidade eng --ref <slug do princi
 python scripts/aa_rank.py --perfil agente --min 45 --max-ttfat 30
 ```
 
-`--capacidade` escolhe o índice da área (padrão: Intel) e `--min` define o piso nele. `--ref` e `--pct` definem o piso como porcentagem da nota do principal na mesma área e mostram quanto o principal custaria no perfil; assim o piso acompanha novas versões sem fixar nomes. Com `--min`, a lista vem ordenada pelo menor custo no perfil; sem ele, por pontos por dólar (`--ordem` altera). `--max-ttfat` e `--min-tps` excluem modelos lentos. O nome da variante (Low, Medium, High, Xhigh, Max) indica o esforço a passar para a CLI.
+`--capacidade` escolhe o índice da área (padrão: Intel) e `--min` define o piso nele. Em `--ref`, use o slug da variante no esforço em que o principal roda (ex.: `claude-opus-5-5-high`); o slug sem sufixo costuma ser a variante Max e eleva o piso. `--ref` e `--pct` definem o piso como porcentagem da nota do principal na mesma área e mostram quanto o principal custaria no perfil; assim o piso acompanha novas versões sem fixar nomes. Com `--min`, a lista vem ordenada pelo menor custo no perfil; sem ele, por pontos por dólar (`--ordem` altera). `--max-ttfat` e `--min-tps` excluem modelos lentos. O nome da variante (Low, Medium, High, Xhigh, Max) indica o esforço a passar para a CLI.
 
 ## Custo esperado: o que conta é a tarefa concluída
 

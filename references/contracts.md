@@ -14,7 +14,7 @@ Ações e ferramentas permitidas:
 Dependências e restrições:
 Critérios de aceitação e verificações:
 Condição de parada e escalonamento:
-Orçamento, se houver (tokens, cota ou US$; por executor e pelo conjunto):
+Orçamento, se houver (tokens, cota ou US$; por executor e pelo conjunto; ao atingir, parar e relatar):
 Entrega esperada (formato e tamanho máximo):
 Skills aplicáveis e seus caminhos, quando disponíveis:
 ```
