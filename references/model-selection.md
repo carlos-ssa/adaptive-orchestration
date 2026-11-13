@@ -20,7 +20,7 @@ O modelo mais barato por token pode consumir mais raciocínio e tentativas; o ma
 Os dados ficam em `data/`, na raiz da skill, gerados por `scripts/aa_snapshot.py` a partir da [API gratuita](https://artificialanalysis.ai/data-api/docs) (exige `AA_API_KEY`; 100 requisições por dia; atribuição obrigatória; não redistribuir). `aa-snapshot.json` guarda todos os campos; `aa-snapshot.md` traz tabelas de capacidade, custo e velocidade para leitura humana.
 
 1. Rode `python scripts/aa_snapshot.py --check` a partir da raiz da skill. Código 0: use o retrato existente.
-2. Se estiver vencido ou ausente e houver rede e chave, rode `python scripts/aa_snapshot.py --creators <provedores da CLI>` (por exemplo `anthropic,openai`; o filtro vale só para o Markdown). Sem chave ou rede, não navegue pelo site a cada tarefa: use `preferences.local.md` ou o conhecimento disponível como escolha provisória e registre a lacuna.
+2. Se estiver vencido ou ausente e houver rede e chave, rode `python scripts/aa_snapshot.py --creators <provedores da CLI>` (por exemplo `anthropic,openai`; o filtro vale só para o Markdown). Sem chave ou rede, não navegue pelo site a cada tarefa: reutilize o retrato datado disponível ou `preferences.local.md` e registre a lacuna; sem ambos, use a tabela provisória datada da CLI ([Claude Code](claude-code.md#partida-sem-retrato), [Codex](codex.md#partida-sem-retrato)).
 3. Para escolher, rode `scripts/aa_rank.py` em vez de ler as tabelas inteiras (veja abaixo).
 4. Cruze o resultado com os modelos que a CLI realmente oferece. Nomes do Artificial Analysis e apelidos da CLI diferem; registre o mapeamento em `preferences.local.md` para não refazê-lo.
 
@@ -49,7 +49,7 @@ O custo de uma chamada delegada é: entrada nova × preço de gravação de cach
 
 Os volumes são ilustrativos. Quando souber o tamanho real, use `--entrada`, `--cache` e `--saida`. Em leitura e sessões longas, o preço de entrada e de cache pesa mais que a verbosidade; em geração, o contrário.
 
-Alguns provedores cobram mais acima de um limite de contexto: segundo o [guia de escolha de modelos da Anthropic](https://claude.dev/blog/which-claude-model-should-you-build-with/#pick-a-model-by-task), prompts acima de 100 mil tokens no Haiku 5.5 custam 5 vezes a taxa base. O retrato não traz essas faixas; o script avisa quando a entrada passa de 100 mil tokens, mas não corrige o custo. Sem a tabela do provedor, trate a sobretaxa como desconhecida para qualquer modelo e prefira blocos abaixo de 100 mil tokens. Nesses casos, confira a tabela do provedor, divida a leitura em blocos menores ou registre a sobretaxa conhecida em `preferences.local.md`.
+Alguns provedores cobram mais acima de um limite de contexto: detalhe datado de 12/11/2026, segundo o [guia de escolha de modelos da Anthropic](https://claude.dev/blog/which-claude-model-should-you-build-with/#pick-a-model-by-task), prompts acima de 100 mil tokens no Haiku 5.5 custam 5 vezes a taxa base. O retrato não traz essas faixas; o script avisa quando a entrada passa de 100 mil tokens, mas não corrige o custo. Sem a tabela do provedor, trate a sobretaxa como desconhecida para qualquer modelo e prefira blocos abaixo de 100 mil tokens. Nesses casos, confira a tabela do provedor, divida a leitura em blocos menores ou registre a sobretaxa conhecida em `preferences.local.md`.
 
 Inclua também os casos difíceis: no mesmo guia, 2 de 20 problemas responderam por 43% do gasto. Um perfil médio subestima tarefas com cauda longa.
 
@@ -62,6 +62,10 @@ python scripts/aa_rank.py --perfil agente --min 45 --max-ttfat 30
 ```
 
 `--capacidade` escolhe o índice da área (padrão: Intel) e `--min` define o piso nele. Em `--ref`, use o slug da variante no esforço em que o principal roda (ex.: `claude-opus-5-5-high`); o slug sem sufixo costuma ser a variante Max e eleva o piso. `--ref` e `--pct` definem o piso como porcentagem da nota do principal na mesma área e mostram quanto o principal custaria no perfil; assim o piso acompanha novas versões sem fixar nomes. Com `--min`, a lista vem ordenada pelo menor custo no perfil; sem ele, por pontos por dólar (`--ordem` altera). `--max-ttfat` e `--min-tps` excluem modelos lentos. O nome da variante (Low, Medium, High, Xhigh, Max) indica o esforço a passar para a CLI.
+
+`--cli claude-code` acrescenta `model` pela família (haiku/sonnet/opus/fable) e `effort` pelo sufixo; candidatos sem apelido ficam como “não exposto nesta CLI”, sem filtragem nem mudança na ordem.
+`--cli codex` usa o slug como `model` e o sufixo como `model_reasoning_effort`; confira o nome e os valores aceitos em `/model`. Sem sufixo, o esforço fica sem dados, não é inferido como Max.
+O mapeamento fica em `scripts/aa_common.py`; é uma sugestão de parâmetros, não confirmação do modelo servido pelo provedor ou proxy.
 
 ## Custo esperado: o que conta é a tarefa concluída
 
@@ -93,7 +97,14 @@ Troque de modelo em pontos naturais da tarefa. O cache pertence ao modelo que o 
 
 ### Calibração
 
-Registre por bloco o modelo, o esforço, o consumo real quando a CLI o mostrar (tokens, cota ou US$) e o resultado: aceito, corrigido ou refeito. O consumo real substitui a estimativa do perfil nas escolhas seguintes. Duas falhas por capacidade na mesma faixa e tipo de tarefa elevam o piso dessa faixa; entregas aceitas com folga permitem testar um candidato mais barato. Falhas por contexto, acesso ou ferramenta não contam: corrija o contrato.
+Registre por bloco a data, faixa, tipo de tarefa, modelo, esforço, consumo real quando a CLI o mostrar (tokens, cota ou US$) e resultado: aceito, corrigido ou refeito. Use `scripts/aa_log.py`, que acrescenta uma linha em `data/calibracao.jsonl` (local, ignorado pelo Git). Para corrigido/refeito, `--motivo` é obrigatório: `capacidade|contexto|acesso|ferramenta|infra`; `--consumo` é texto opcional com unidade, sem conversão automática.
+
+```sh
+python scripts/aa_log.py --faixa 2 --tipo codigo --modelo executor --esforco medium --resultado corrigido --motivo capacidade --consumo "12000 tokens"
+python scripts/aa_log.py --resumo
+```
+
+O resumo agrega por faixa/tipo/modelo e sinaliza duas falhas por capacidade na mesma faixa/tipo, inclusive entre modelos diferentes; não altera o piso automaticamente. `--arquivo <caminho>` permite separar registros e `--data AAAA-MM-DD` substitui a data de hoje. O consumo real substitui a estimativa do perfil nas escolhas seguintes. Duas falhas por capacidade na mesma faixa e tipo de tarefa elevam o piso dessa faixa; entregas aceitas com folga permitem testar um candidato mais barato. Falhas por contexto, acesso, ferramenta ou infraestrutura não contam: corrija o contrato ou a condição de execução.
 
 ## Processo de escolha
 
@@ -104,7 +115,7 @@ Analise o modelo como um todo para o bloco, nesta ordem:
 3. **Custo no perfil.** Entre os que atingem o piso, escolha o menor custo no perfil de uso do bloco, não só o US$/tarefa nem só o preço por token. Variantes do mesmo modelo concorrem entre si: a escolhida define também o esforço.
 4. **Velocidade.** Desempate por tok/s e 1º token de resposta quando o bloco estiver no caminho crítico ou for interativo.
 5. Prefira a família do principal quando a diferença for pequena: ferramentas e formato de resposta costumam ser mais estáveis. Diferenças pequenas e arredondadas não provam equivalência.
-6. Registre no trabalho: modelo, esforço, perfil, piso, data do retrato e motivo em uma linha; depois, o resultado para a calibração.
+6. Registre a linha obrigatória do `SKILL.md`: modelo/esforço, capacidade/piso, custo no perfil e 1º token de resposta; acrescente data do retrato e motivo. Depois, registre o resultado para a calibração.
 7. Preserve a seleção explícita do usuário, inclusive a do principal; a skill não autoriza trocá-la.
 
 Não invente economia nem bloqueie trabalho executável por falta de dados. Peça informação quando ela for essencial ou a alternativa exigir nova autorização.

@@ -8,8 +8,7 @@ Os caminhos, nomes de modelos e comandos abaixo são fictícios; confirme os equ
 Objetivo: atualizar os consumidores de fetchUser para getAccount no pacote billing.
 Premissas: o principal já alterou a API compartilhada e confirmou o novo retorno.
 Materiais: contrato de API, inventário de chamadas e decisão de compatibilidade.
-Modelo: executor disponível adequado a alterações delimitadas; esforço padrão
-        (a ferramenta deste exemplo não permite selecionar esforço).
+Escolha: migração billing → executor-A/herdado (não exposto) | capacidade sem dados ≥ piso sem dados | custo no perfil codigo: sem dados | 1º token de resposta: sem dados
 Escrita: packages/billing/src e packages/billing/test.
 Proibido: alterar API compartilhada, outros pacotes ou executar deploy.
 Subdelegação: proibida; necessidades adicionais retornam ao principal.
@@ -27,13 +26,14 @@ O principal valida o pacote, reconcilia o inventário e testa a integração. Um
 
 ```text
 Tarefa: extrair datas de documentos conhecidos.
-Candidatos: leitor-A e geral-B (nomes fictícios).
-Disponibilidade: ambos expostos pela ferramenta; principal escolhido preservado.
+Disponibilidade: leitor-A (nome fictício) exposto pela ferramenta; principal escolhido preservado.
 Evidência: leitor-A passou nas verificações locais recentes desta mesma transformação.
 Esforço: herdado e não exposto; sem tentativa de inventar configuração.
 Custos/benchmark externo: desconhecidos; rede indisponível nesta execução.
-Escolha: leitor-A como candidato provisório, com validação das datas contra as fontes.
-Reavaliar: falha de fidelidade, mudança de documentos ou evidência nova de capacidade.
+Escolha: extração de datas → leitor-A/herdado (não exposto) | capacidade sem dados ≥ piso sem dados | custo no perfil leitura: sem dados | 1º token de resposta: sem dados
+Verificação: validar as datas contra as fontes.
+Se falhar: devolver ao principal para corrigir contexto e reavaliar capacidade.
+Reavaliar: mudança de documentos ou evidência nova de capacidade.
 Conclusão econômica: não estabelecida.
 ```
 

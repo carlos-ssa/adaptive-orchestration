@@ -24,6 +24,19 @@ Precedência do modelo: parâmetro da chamada → `model` no arquivo do agente �
 
 Os apelidos dependem do provedor: segundo o [guia de escolha de modelos](https://claude.dev/blog/which-claude-model-should-you-build-with/#pick-a-model-by-task), `haiku` aponta para o Haiku 5.5 na API da Anthropic, mas para o Haiku 4.5 no Bedrock, Google Cloud, Foundry e Claude Platform on AWS. Confira o modelo efetivo antes de usar o retrato do Artificial Analysis; se precisar de uma versão exata, use o ID completo no arquivo do agente.
 
+## Partida sem retrato
+
+Padrão provisório de 13/11/2026, substituível: use somente sem retrato e sem `preferences.local.md`. Não comprova capacidade nem economia; confirme disponibilidade e esforço na sessão e verifique cada entrega.
+
+| Faixa | Partida |
+|---|---|
+| 0 | Script ou ferramenta, sem modelo |
+| 1 | `model=haiku`, `effort=low` |
+| 2 | `model=sonnet`, `effort=medium` |
+| 3 | Principal escolhido pelo usuário, sem troca |
+
+Se a CLI não expuser o esforço, registre o valor herdado/não confirmado; não simule o parâmetro. Refaça a escolha quando houver retrato, preferências ou falha de capacidade.
+
 ## Agentes próprios
 
 Arquivos `.claude/agents/<nome>.md` (projeto) ou `~/.claude/agents/<nome>.md` (pessoal):

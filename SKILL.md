@@ -1,6 +1,6 @@
 ---
 name: adaptive-orchestration
-description: Escolhe o modelo de melhor custo-benefício para cada parte de um trabalho e coordena subagentes com contratos e verificação, usando dados do Artificial Analysis. Use quando o pedido envolver delegar a subagentes, decidir qual modelo ou esforço usar, economizar cota ou custo, ou dividir trabalho grande (pesquisa ampla, migração em muitos arquivos, hipóteses concorrentes, revisão independente). Não use para tarefas pequenas ou diretas.
+description: Escolhe o modelo de melhor custo-benefício para cada parte de um trabalho e coordena subagentes com contratos e verificação. Use quando o pedido envolver delegar a subagentes, decidir qual modelo ou esforço usar, economizar cota ou custo, ou dividir trabalho grande (pesquisa ampla, migração em muitos arquivos, hipóteses concorrentes, revisão independente). Não use para tarefas pequenas ou diretas.
 ---
 
 # Coordenação adaptativa
@@ -23,9 +23,10 @@ O principal mantém objetivo, julgamento e integração. Delegue blocos verific�
 | 2 | Código delimitado com testes, migração mecânica, revisão que aplica critérios e recomenda | Modelo intermediário |
 | 3 | Ambiguidade, arquitetura, integração, decisão final, segurança, pagamento | Principal decide; só leitura de apoio e revisão independente podem ser delegadas |
 
-- Os modelos de cada faixa vêm do `preferences.local.md`, se existir; senão, do [retrato do Artificial Analysis](references/model-selection.md) cruzado com os modelos que a CLI oferece.
-- Avalie o modelo inteiro para o bloco: requisitos rígidos (contexto, modalidade, ferramentas), capacidade na área do bloco, custo no perfil de uso (entrada, cache, saída e verbosidade) e velocidade. `scripts/aa_rank.py` cruza esses dados; o nome da variante indica o esforço. Escolha uma variante só, a mais barata acima do piso, e cite os dados da escolha (capacidade, piso e custo no perfil). Se o principal ou o usuário vai esperar o bloco, cite a velocidade na escolha e descarte variantes lentas demais (`--max-ttfat`): o mais barato pode levar minutos até o primeiro token de resposta.
-- A capacidade é piso, não desempate: quanto mais caro errar, mais perto do principal. Com verificação automática, tente o candidato barato e refaça só as falhas acima. Registre o resultado de cada bloco para calibrar os pisos ([custo esperado](references/model-selection.md#custo-esperado-o-que-conta-é-a-tarefa-concluída)).
+- Os modelos de cada faixa vêm do `preferences.local.md`, se existir; senão, do [retrato do Artificial Analysis](references/model-selection.md) cruzado com os modelos que a CLI oferece. Sem ambos, use a tabela provisória datada da CLI ([Claude Code](references/claude-code.md#partida-sem-retrato), [Codex](references/codex.md#partida-sem-retrato)).
+- Avalie o modelo inteiro para o bloco: requisitos rígidos (contexto, modalidade, ferramentas), capacidade na área do bloco, custo no perfil de uso (entrada, cache, saída e verbosidade) e velocidade. `scripts/aa_rank.py` cruza esses dados; o nome da variante indica o esforço. Escolha uma variante só, a mais barata acima do piso. Se o principal ou o usuário vai esperar o bloco, descarte variantes lentas demais (`--max-ttfat`): o mais barato pode levar minutos até o primeiro token de resposta.
+- Registre obrigatoriamente uma linha por bloco: `bloco → modelo/esforço | capacidade X ≥ piso Y | custo no perfil <perfil>: valor | 1º token de resposta: tempo` (use `sem dados` nos campos sem retrato e identifique esforço não exposto). Alternativa só como regra de escalonamento: `se falhar: ...`, nunca como segunda escolha.
+- A capacidade é piso, não desempate: quanto mais caro errar, mais perto do principal. Com verificação automática, tente o candidato barato e refaça só as falhas acima. Registre cada resultado com `scripts/aa_log.py` em `data/calibracao.jsonl` e use `--resumo` para [calibrar os pisos](references/model-selection.md#calibração).
 - Em assinatura ou proxy, o custo é a cota: preserve a do modelo da faixa 3.
 
 ## Coordene e verifique

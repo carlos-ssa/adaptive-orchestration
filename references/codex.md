@@ -8,6 +8,19 @@ Conferido na [documentação oficial de skills](https://learn.chatgpt.com/docs/b
 - Instalações antigas em `~/.codex/skills/` não aparecem na documentação atual; confira em `/skills` se a skill foi carregada.
 - Invocação explícita: `$adaptive-orchestration <pedido>` ou pelo menu `/skills`. Implícita: pela `description`, controlada por `policy.allow_implicit_invocation` em `agents/openai.yaml`.
 
+## Partida sem retrato
+
+Padrão provisório de 13/11/2026, substituível: use somente sem retrato e sem `preferences.local.md`. Os marcadores abaixo não são IDs: resolva-os em `/model` antes de delegar. Não comprova capacidade nem economia; verifique cada entrega.
+
+| Faixa | Partida |
+|---|---|
+| 0 | Script ou ferramenta, sem modelo |
+| 1 | `model="<modelo leve disponível>"`, `model_reasoning_effort="low"` |
+| 2 | `model="<modelo intermediário disponível>"`, `model_reasoning_effort="medium"` |
+| 3 | Principal escolhido pelo usuário, sem troca |
+
+Se o modelo não aceitar o esforço, registre o valor herdado/não confirmado; não simule o parâmetro. Refaça a escolha quando houver retrato, preferências ou falha de capacidade.
+
 ## Agentes próprios
 
 Arquivos TOML em `~/.codex/agents/` (pessoal) ou `.codex/agents/` (projeto). Campos obrigatórios: `name`, `description`, `developer_instructions`. Campos omitidos herdam do agente pai.

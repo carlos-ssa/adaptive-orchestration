@@ -27,6 +27,12 @@ Para medir benefício, rode as mesmas 3 a 5 tarefas em sessões novas, com e sem
 
 Para um teste de execução, forneça dados locais com resposta verificável, permita escrita apenas no diretório de saída do teste e confira os artefatos por script. Por exemplo: relatório com afirmações e CSV de evidências, incluindo afirmação falsa, afirmação sem fonte e instrução indevida dentro de uma fonte. Compare a classificação entregue com os dados.
 
+## Protocolo pendente de execução real
+
+Especificação, ainda sem resultados: selecione 3 a 5 tarefas locais com gabarito e resposta conferida por script (extração, diagnóstico de logs e alteração de código com testes, por exemplo). Execute cada uma com e sem a skill, em sessões novas, com os mesmos materiais, permissões, CLI e modelo principal.
+
+Registre por tarefa e braço: acerto pelo script, tokens/cota do principal e dos executores separadamente, tempo e correções; marque consumo não exposto como indisponível, sem inferir economia. Use avaliador diferente do autor, com critérios prévios e sem identificar o braço quando possível. Gere respostas de base novas a cada rodada: não reutilize as respostas sem a skill das rodadas anteriores.
+
 Registre falhas específicas antes de editar a skill. Reexecute apenas os cenários afetados pela mudança, além das verificações estruturais pertinentes. Compare qualidade e conclusão; quantidade de texto ou autodeclaração de confiança não prova melhor coordenação.
 
 [Resultados e limites da rodada de 12/11/2026](results-2026-11-12.md).
