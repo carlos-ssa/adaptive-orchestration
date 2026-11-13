@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import statistics
 from pathlib import Path
 
@@ -30,6 +31,37 @@ PROFILES = {
     "geracao": {"entrada": 10_000, "cache": 0.0, "saida": 20_000,
                 "desc": "escrever texto ou código novo a partir de pouco contexto"},
 }
+
+
+# Tradução de família/variante, não um catálogo de versões ou disponibilidade.
+CLI_MAPPING = {
+    "claude-code": {"aliases": ("haiku", "sonnet", "opus", "fable"), "effort": "effort"},
+    "codex": {"aliases": (), "effort": "model_reasoning_effort"},
+}
+EFFORT_SUFFIXES = {name.lower(): name.lower() for name in ("Low", "Medium", "High", "Xhigh", "Max")}
+
+
+def cli_parameters(row: dict, cli: str) -> str:
+    """Parâmetros sugeridos; ausência de sufixo não implica esforço padrão ou Max."""
+    mapping = CLI_MAPPING[cli]
+    effort = None
+    for value in (row["name"], row["slug"]):
+        match = re.search(r"(?:^|[\s_\-(])(" + "|".join(EFFORT_SUFFIXES) + r")\)?$",
+                          value, re.IGNORECASE)
+        if match:
+            effort = EFFORT_SUFFIXES[match.group(1).lower()]
+            break
+    model = row["slug"]
+    if mapping["aliases"]:
+        families = set(re.findall(r"[a-z]+", f"{row['name']} {row['slug']}".lower()))
+        aliases = [alias for alias in mapping["aliases"] if alias in families]
+        if len(aliases) != 1:
+            return "não exposto nesta CLI"
+        model = aliases[0]
+    params = f"model={model}"
+    if effort:
+        return f"{params}; {mapping['effort']}={effort}"
+    return f"{params} (esforço sem dados; confira na CLI)"
 
 
 def num(value, digits=2) -> str:

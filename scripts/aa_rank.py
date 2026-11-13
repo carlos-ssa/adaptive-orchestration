@@ -22,7 +22,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from aa_common import CAPABILITIES, DATA_DIR, PROFILES, flatten, median_verbosity, num, profile_cost  # noqa: E402
+from aa_common import (  # noqa: E402
+    CAPABILITIES, CLI_MAPPING, DATA_DIR, PROFILES, cli_parameters, flatten,
+    median_verbosity, num, profile_cost,
+)
 
 
 def main() -> int:
@@ -45,12 +48,16 @@ def main() -> int:
     parser.add_argument("--min-tps", type=float, help="tokens/s mínimos")
     parser.add_argument("--ordem", choices=("custo", "valor"),
                         help="padrão: custo com --min, valor sem --min")
+    parser.add_argument("--cli", choices=CLI_MAPPING, help="acrescenta parâmetros sugeridos para a CLI")
     parser.add_argument("--top", type=int, default=10)
     parser.add_argument("--snapshot", type=Path, default=DATA_DIR / "aa-snapshot.json")
     args = parser.parse_args()
 
     if not args.snapshot.exists():
-        print("Retrato ausente. Rode: python scripts/aa_snapshot.py", file=sys.stderr)
+        print("Retrato ausente. Rode: python scripts/aa_snapshot.py. Sem chave/retrato e sem"
+              " preferences.local.md, use a tabela 'Partida sem retrato' em"
+              " references/claude-code.md ou references/codex.md (padrão provisório datado).",
+              file=sys.stderr)
         return 1
     snapshot = json.loads(args.snapshot.read_text(encoding="utf-8"))
     profile = dict(PROFILES[args.perfil])
@@ -123,8 +130,9 @@ def main() -> int:
     if not candidates:
         print("Nenhum candidato atende aos filtros. Revise --creators, --min/--pct ou os limites de velocidade.")
         return 1
-    print(f"| Modelo | Slug | {label} |{intel_h} US$ no perfil | {label}/US$ | US$/tarefa | Saída/tarefa (mil) | tok/s | 1º token de resposta (s) |")
-    print("|---|---|---|" + intel_sep + "---|" * 6)
+    cli_h, cli_sep = (" Parâmetros CLI |", "---|") if args.cli else ("", "")
+    print(f"| Modelo | Slug | {label} |{intel_h} US$ no perfil | {label}/US$ | US$/tarefa | Saída/tarefa (mil) | tok/s | 1º token de resposta (s) |" + cli_h)
+    print("|---|---|---|" + intel_sep + "---|" * 6 + cli_sep)
     for r in candidates[: args.top]:
         verb = r["verbosity"] / 1000 if r["verbosity"] else None
         print(
@@ -132,11 +140,14 @@ def main() -> int:
             + ("" if cap == "intel" else f" {num(r['intel'], 1)} |")
             + f" {num(r['profile_cost'], 4)} | "
             f"{num(r['value'], 0)} | {num(r['per_task'], 4)} | {num(verb, 0)} | {num(r['tps'], 0)} | {num(r['ttfat'], 1)} |"
+            + (f" {cli_parameters(r, args.cli)} |" if args.cli else "")
         )
     print()
+    if args.cli == "codex":
+        print("Codex: o modelo usa o slug do retrato; confira o nome e o esforço aceitos em /model.")
     if profile["entrada"] > 100_000:
-        print("Atenção: acima de 100 mil tokens de entrada, alguns provedores cobram tarifa maior"
-              " (ex.: Haiku 5.5, 5 vezes a base). O retrato não traz essas faixas; confira o provedor.")
+        print("Atenção: acima de 100 mil tokens de entrada, alguns provedores cobram tarifa maior."
+              " O retrato não traz essas faixas; confira a tabela do provedor.")
     print("Estimativas a partir de preços e verbosidade publicados pelo Artificial Analysis;"
           " confira disponibilidade, contexto, modalidades e ferramentas na CLI antes de escolher.")
     return 0
