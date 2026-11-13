@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import tempfile
 import os
 import sys
 import urllib.error
@@ -31,20 +32,43 @@ import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from aa_common import CAPABILITIES, DATA_DIR, flatten, num  # noqa: E402
+from aa_common import CAPABILITIES, DATA_DIR, flatten, num, validate_snapshot  # noqa: E402
 
 API_URL = "https://artificialanalysis.ai/api/v2/language/models/free"
 MAX_PAGES = 20
 
 
-def snapshot_age_days(path: Path) -> int | None:
-    if not path.exists():
-        return None
+def validate_payload(payload: object, require_date: bool = False) -> bool:
+    """Use the shared snapshot schema for both freshness checks and writes."""
     try:
-        generated = json.loads(path.read_text(encoding="utf-8"))["generated_at"]
-    except (ValueError, KeyError):
+        validate_snapshot(payload, require_date=require_date)
+    except (ValueError, TypeError, AttributeError, ArithmeticError):
+        return False
+    return True
+
+
+def snapshot_age_days(path: Path) -> int | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not validate_payload(payload, require_date=True):
+            return None
+        return (dt.date.today() - dt.date.fromisoformat(payload["generated_at"])).days
+    except (OSError, UnicodeError, ValueError):
         return None
-    return (dt.date.today() - dt.date.fromisoformat(generated)).days
+
+
+def atomic_write(path: Path, content: str) -> None:
+    """Replace one file atomically; the JSON/Markdown pair is not transactional."""
+    tmp = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                         delete=False, newline="\n") as stream:
+            tmp = Path(stream.name)
+            stream.write(content)
+        os.replace(tmp, path)
+    finally:
+        if tmp is not None:
+            tmp.unlink(missing_ok=True)
 
 
 def fetch_all(api_key: str) -> dict:
@@ -66,17 +90,31 @@ def fetch_all(api_key: str) -> dict:
                 hint = " (chave inválida ou sem acesso)"
             print(f"Erro HTTP {exc.code}{hint}", file=sys.stderr)
             sys.exit(3)
-        except urllib.error.URLError as exc:
-            print(f"Erro de rede: {exc.reason}", file=sys.stderr)
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            print(f"Erro de rede: {exc}", file=sys.stderr)
             sys.exit(3)
+        except (ValueError, UnicodeError) as exc:
+            print(f"Resposta inesperada da API: {exc}", file=sys.stderr)
+            sys.exit(4)
         if not isinstance(body, dict) or not isinstance(body.get("data"), list):
             print("Resposta inesperada da API", file=sys.stderr)
             sys.exit(4)
         if page == 1:
             meta = {k: body.get(k) for k in ("tier", "intelligence_index_version")}
         models.extend(body["data"])
-        if not (body.get("pagination") or {}).get("has_more"):
+        pagination = body.get("pagination")
+        if pagination is not None and not isinstance(pagination, dict):
+            print("Paginação inesperada da API", file=sys.stderr)
+            sys.exit(4)
+        has_more = (pagination or {}).get("has_more", False)
+        if not isinstance(has_more, bool):
+            print("Paginação inesperada da API", file=sys.stderr)
+            sys.exit(4)
+        if not has_more:
             break
+    else:
+        print("Limite de páginas atingido antes do fim da resposta", file=sys.stderr)
+        sys.exit(4)
     return {**meta, "data": models}
 
 
@@ -132,15 +170,15 @@ def render_markdown(snapshot: dict, creators: list[str]) -> str:
         "",
         "## Velocidade",
         "",
-        "Medianas da API do provedor: tokens de saída por segundo, segundos até o primeiro token,"
-        " até o primeiro token de resposta (após o raciocínio) e resposta completa de 500 tokens.",
+        "Médias performance_v3 quando presentes; sem objeto v3, medianas legadas."
+        " Metodologias distintas não são equivalentes. Ponta a ponta de 500 tokens só existe no formato legado.",
         "",
-        "| Modelo | tok/s | 1º token | 1º token de resposta | Ponta a ponta |",
-        "|---|---|---|---|---|",
+        "| Modelo | tok/s | 1º token | 1º token de resposta | Ponta a ponta | Método |",
+        "|---|---|---|---|---|---|",
     ]
     for r in rows:
         lines.append(
-            f"| {r['name']} | {num(r['tps'], 0)} | {num(r['ttft'], 1)} | {num(r['ttfat'], 1)} | {num(r['e2e'], 1)} |"
+            f"| {r['name']} | {num(r['tps'], 0)} | {num(r['ttft'], 1)} | {num(r['ttfat'], 1)} | {num(r['e2e'], 1)} | {r['perf_source']} |"
         )
     lines += [
         "",
@@ -163,6 +201,8 @@ def main() -> int:
     parser.add_argument("--creators", default="", help="filtra o Markdown; o JSON guarda todos")
     parser.add_argument("--from-file", type=Path, help="usa JSON salvo em vez da API (testes)")
     args = parser.parse_args()
+    if args.max_age_days < 0:
+        parser.error("--max-age-days deve ser não negativo")
 
     json_path = args.dir / "aa-snapshot.json"
     age = snapshot_age_days(json_path)
@@ -176,7 +216,11 @@ def main() -> int:
         return 0
 
     if args.from_file:
-        payload = json.loads(args.from_file.read_text(encoding="utf-8"))
+        try:
+            payload = json.loads(args.from_file.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, ValueError) as exc:
+            print(f"Arquivo inválido: {exc}", file=sys.stderr)
+            return 4
     else:
         api_key = os.environ.get("AA_API_KEY")
         if not api_key:
@@ -184,17 +228,27 @@ def main() -> int:
             return 2
         payload = fetch_all(api_key)
 
+    if not validate_payload(payload, require_date=bool(args.from_file)):
+        print("Resposta inesperada ou retrato inválido", file=sys.stderr)
+        return 4
+
     snapshot = {
-        "generated_at": dt.date.today().isoformat(),
+        "generated_at": payload["generated_at"] if args.from_file else dt.date.today().isoformat(),
         "source": "https://artificialanalysis.ai/",
         "tier": payload.get("tier"),
         "intelligence_index_version": payload.get("intelligence_index_version"),
         "data": payload["data"],
     }
     creators = [c.strip() for c in args.creators.split(",") if c.strip()]
-    args.dir.mkdir(parents=True, exist_ok=True)
-    json_path.write_text(json.dumps(snapshot, ensure_ascii=False), encoding="utf-8")
-    (args.dir / "aa-snapshot.md").write_text(render_markdown(snapshot, creators), encoding="utf-8")
+    try:
+        json_text = json.dumps(snapshot, ensure_ascii=False, allow_nan=False)
+        markdown = render_markdown(snapshot, creators)
+        args.dir.mkdir(parents=True, exist_ok=True)
+        atomic_write(json_path, json_text)
+        atomic_write(args.dir / "aa-snapshot.md", markdown)
+    except (OSError, TypeError, ValueError, ArithmeticError) as exc:
+        print(f"Erro ao salvar retrato: {exc}", file=sys.stderr)
+        return 4
     print(f"Retrato salvo em {args.dir} ({len(snapshot['data'])} modelos)")
     return 0
 

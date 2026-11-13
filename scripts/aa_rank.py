@@ -17,6 +17,7 @@ O nome da variante (Low, Medium, High...) indica o esforço a usar na CLI.
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 import sys
 from pathlib import Path
@@ -24,7 +25,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from aa_common import (  # noqa: E402
     CAPABILITIES, CLI_MAPPING, DATA_DIR, PROFILES, cli_parameters, flatten,
-    median_verbosity, num, profile_cost,
+    finite_number, median_verbosity, num, profile_cost, validate_snapshot,
 )
 
 
@@ -50,16 +51,38 @@ def main() -> int:
                         help="padrão: custo com --min, valor sem --min")
     parser.add_argument("--cli", choices=CLI_MAPPING, help="acrescenta parâmetros sugeridos para a CLI")
     parser.add_argument("--top", type=int, default=10)
+    parser.add_argument("--available", help="slugs do retrato confirmados no runtime, separados por vírgula")
+    parser.add_argument("--max-age-days", type=int, default=7)
+    parser.add_argument("--allow-stale", action="store_true", help="permite retrato vencido, identificado na saída")
     parser.add_argument("--snapshot", type=Path, default=DATA_DIR / "aa-snapshot.json")
     args = parser.parse_args()
+    for name in ("min", "pct", "max_ttfat", "min_tps", "cache"):
+        value = getattr(args, name)
+        if value is not None and (not finite_number(value) or value < 0):
+            parser.error(f"--{name.replace('_', '-')} deve ser finito e não negativo")
+    if args.cache is not None and args.cache > 1:
+        parser.error("--cache deve estar entre 0 e 1")
+    if args.top < 1 or args.max_age_days < 0 or any(
+            value is not None and value < 0 for value in (args.entrada, args.saida)):
+        parser.error("--top deve ser positivo; tokens e idade devem ser não negativos")
 
     if not args.snapshot.exists():
         print("Retrato ausente. Rode: python scripts/aa_snapshot.py. Sem chave/retrato e sem"
-              " preferences.local.md, use a tabela 'Partida sem retrato' em"
-              " references/claude-code.md ou references/codex.md (padrão provisório datado).",
+              " preferences.local.md, siga 'Partida sem dados' em"
+              " references/claude-code.md ou references/codex.md (seleção herdada).",
               file=sys.stderr)
         return 1
-    snapshot = json.loads(args.snapshot.read_text(encoding="utf-8"))
+    try:
+        snapshot = json.loads(args.snapshot.read_text(encoding="utf-8"))
+        validate_snapshot(snapshot, require_date=True)
+        age = (dt.date.today() - dt.date.fromisoformat(snapshot["generated_at"])).days
+        if age > args.max_age_days:
+            if not args.allow_stale:
+                raise ValueError("retrato vencido; atualize ou use --allow-stale como hipótese datada")
+            print(f"Aviso: retrato vencido ({age} dias); custos não confirmados.", file=sys.stderr)
+    except (OSError, ValueError, TypeError, OverflowError) as exc:
+        print(f"Retrato inválido: {exc}", file=sys.stderr)
+        return 1
     profile = dict(PROFILES[args.perfil])
     perfil_nome = args.perfil
     for key in ("entrada", "cache", "saida"):
@@ -85,6 +108,9 @@ def main() -> int:
     if args.creators:
         wanted = [c.strip().lower() for c in args.creators.split(",") if c.strip()]
         rows = [r for r in rows if any(w in r["creator"].lower() for w in wanted)]
+    if args.available is not None:
+        available = {value.strip() for value in args.available.split(",") if value.strip()}
+        rows = [r for r in rows if r["slug"] in available]
     if args.ordem is None:
         args.ordem = "custo" if args.min > 0 else "valor"
     excluded = {"sem nota": 0, "abaixo do mínimo": 0, "sem preço": 0, "lento": 0}
@@ -106,7 +132,7 @@ def main() -> int:
             excluded["sem preço"] += 1
             continue
         r["profile_cost"] = cost
-        r["value"] = r[cap] / cost if cost else None
+        r["value"] = r[cap] / cost if cost else float("inf")
         candidates.append(r)
 
     if args.ordem == "custo":
@@ -131,18 +157,19 @@ def main() -> int:
         print("Nenhum candidato atende aos filtros. Revise --creators, --min/--pct ou os limites de velocidade.")
         return 1
     cli_h, cli_sep = (" Parâmetros CLI |", "---|") if args.cli else ("", "")
-    print(f"| Modelo | Slug | {label} |{intel_h} US$ no perfil | {label}/US$ | US$/tarefa | Saída/tarefa (mil) | tok/s | 1º token de resposta (s) |" + cli_h)
-    print("|---|---|---|" + intel_sep + "---|" * 6 + cli_sep)
+    print(f"| Modelo | Slug | {label} |{intel_h} US$ no perfil | {label}/US$ | US$/tarefa | Saída/tarefa (mil) | tok/s | 1º token de resposta (s) | Método |" + cli_h)
+    print("|---|---|---|" + intel_sep + "---|" * 7 + cli_sep)
     for r in candidates[: args.top]:
         verb = r["verbosity"] / 1000 if r["verbosity"] else None
         print(
             f"| {r['name']} | {r['slug']} | {num(r[cap], 1)} |"
             + ("" if cap == "intel" else f" {num(r['intel'], 1)} |")
             + f" {num(r['profile_cost'], 4)} | "
-            f"{num(r['value'], 0)} | {num(r['per_task'], 4)} | {num(verb, 0)} | {num(r['tps'], 0)} | {num(r['ttfat'], 1)} |"
+            f"{num(r['value'], 0)} | {num(r['per_task'], 4)} | {num(verb, 0)} | {num(r['tps'], 0)} | {num(r['ttfat'], 1)} | {r['perf_source']} |"
             + (f" {cli_parameters(r, args.cli)} |" if args.cli else "")
         )
     print()
+    print("Velocidade: prioriza médias performance_v3; usa medianas legadas só sem objeto v3. Metodologias distintas não são equivalentes.")
     if args.cli == "codex":
         print("Codex: o modelo usa o slug do retrato; confira o nome e o esforço aceitos em /model.")
     if profile["entrada"] > 100_000:

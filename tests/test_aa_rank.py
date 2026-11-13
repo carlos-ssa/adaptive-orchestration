@@ -1,5 +1,6 @@
 """Testes sem rede: nomes, notas e preços abaixo são todos sintéticos."""
 
+import datetime as dt
 import json
 import subprocess
 import sys
@@ -9,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from aa_common import cli_parameters, profile_cost
+from aa_common import cli_parameters, flatten, profile_cost
 
 
 def synthetic_model(family, effort, intel, eng, price, ttfat):
@@ -62,7 +63,7 @@ class RankTests(unittest.TestCase):
             synthetic_model("opus", "high", 100, 90, 4, 15),
             synthetic_model("externo", "xhigh", 60, 60, 2, None),
         ]
-        self.snapshot.write_text(json.dumps({"generated_at": "2026-01-01", "data": self.models}),
+        self.snapshot.write_text(json.dumps({"generated_at": dt.date.today().isoformat(), "data": self.models}),
                                  encoding="utf-8")
 
     def run_rank(self, *args, code=0):
@@ -143,6 +144,63 @@ class RankTests(unittest.TestCase):
         self.assertIn("confira a tabela do provedor", output)
         self.assertNotIn("5 vezes", output)
         self.assertNotIn("Atenção:", self.run_rank("--entrada", "100000").stdout)
+
+    def test_invalid_parameters_fail_before_ranking(self):
+        for args in (("--cache", "1.1"), ("--cache", "nan"), ("--min", "inf"),
+                     ("--entrada", "-1"), ("--saida", "-1"), ("--top", "0"),
+                     ("--max-ttfat", "-1"), ("--max-age-days", "-1")):
+            with self.subTest(args=args):
+                self.run_rank(*args, code=2)
+
+    def test_stale_snapshot_requires_explicit_override(self):
+        payload = json.loads(self.snapshot.read_text())
+        payload["generated_at"] = (dt.date.today() - dt.timedelta(days=8)).isoformat()
+        self.snapshot.write_text(json.dumps(payload))
+        self.assertIn("vencido", self.run_rank(code=1).stderr)
+        self.assertIn("vencido", self.run_rank("--allow-stale").stderr)
+
+    def test_malformed_snapshot_fails_without_traceback(self):
+        for payload in ([], {"data": []}, {"generated_at": "bad", "data": self.models},
+                        {"generated_at": "2999-01-01", "data": self.models}):
+            with self.subTest(payload=payload):
+                self.snapshot.write_text(json.dumps(payload))
+                result = self.run_rank(code=1)
+                self.assertNotIn("Traceback", result.stderr)
+
+    def test_invalid_numeric_data_cannot_win_ranking(self):
+        for value in (-1, "cheap", float("nan"), True):
+            with self.subTest(value=value):
+                self.models[0]["pricing"]["price_1m_input_tokens"] = value
+                self.snapshot.write_text(json.dumps({"generated_at": dt.date.today().isoformat(), "data": self.models}))
+                self.run_rank(code=1)
+
+    def test_available_filter_excludes_unavailable_cheap_model(self):
+        result = self.run_rank("--available", "ensaio-sonnet-medium,ensaio-opus-high", "--ordem", "custo")
+        self.assertEqual(self.slugs(result.stdout), ["ensaio-sonnet-medium", "ensaio-opus-high"])
+        self.run_rank("--available", "missing", code=1)
+
+    def test_free_candidate_ranks_first_by_value(self):
+        self.models[0]["pricing"] = {"price_1m_input_tokens": 0, "price_1m_output_tokens": 0}
+        self.snapshot.write_text(json.dumps({"generated_at": dt.date.today().isoformat(), "data": self.models}))
+        self.assertEqual(self.slugs(self.run_rank("--ordem", "valor").stdout)[0], "ensaio-haiku-low")
+
+    def test_v3_latency_works_without_legacy_and_does_not_mix_missing_fields(self):
+        for model in self.models:
+            model["performance"] = None
+            model["performance_v3"] = {"mean_output_tokens_per_second": 45,
+                                       "mean_time_to_first_answer_token_seconds": 5}
+        self.snapshot.write_text(json.dumps({"generated_at": dt.date.today().isoformat(), "data": self.models}))
+        output = self.run_rank("--max-ttfat", "6").stdout
+        self.assertEqual(len(self.slugs(output)), 4)
+        self.assertIn("média v3", output)
+        self.models[0]["performance_v3"] = {}
+        self.models[0]["performance"] = {"median_time_to_first_answer_token_seconds": 1}
+        self.assertIsNone(flatten(self.models[0])["ttfat"])
+
+    def test_markdown_has_same_column_count(self):
+        for args in ((), ("--cli", "codex"), ("--capacidade", "eng")):
+            lines = [line for line in self.run_rank(*args).stdout.splitlines() if line.startswith("|")]
+            self.assertEqual(len({line.count("|") for line in lines}), 1)
 
 
 class CliMappingTests(unittest.TestCase):

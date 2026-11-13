@@ -20,22 +20,13 @@ A ferramenta `Agent` (antes `Task`) aceita:
 | `isolation` | `worktree` | Cópia isolada do repositório para escrita em paralelo |
 | `run_in_background` | `true` | O principal continua trabalhando enquanto espera |
 
-Precedência do modelo: parâmetro da chamada → `model` no arquivo do agente → `CLAUDE_CODE_SUBAGENT_MODEL` → modelo principal.
+Em condições normais, a precedência é chamada → arquivo do agente → `CLAUDE_CODE_SUBAGENT_MODEL` → principal; versões, regras administradas, força de modelo e agentes integrados podem alterá-la. Confira o modelo efetivo quando disponível.
 
 Os apelidos dependem do provedor: segundo o [guia de escolha de modelos](https://claude.dev/blog/which-claude-model-should-you-build-with/#pick-a-model-by-task), `haiku` aponta para o Haiku 5.5 na API da Anthropic, mas para o Haiku 4.5 no Bedrock, Google Cloud, Foundry e Claude Platform on AWS. Confira o modelo efetivo antes de usar o retrato do Artificial Analysis; se precisar de uma versão exata, use o ID completo no arquivo do agente.
 
-## Partida sem retrato
+## Partida sem dados
 
-Padrão provisório de 13/11/2026, substituível: use somente sem retrato e sem `preferences.local.md`. Não comprova capacidade nem economia; confirme disponibilidade e esforço na sessão e verifique cada entrega.
-
-| Faixa | Partida |
-|---|---|
-| 0 | Script ou ferramenta, sem modelo |
-| 1 | `model=haiku`, `effort=low` |
-| 2 | `model=sonnet`, `effort=medium` |
-| 3 | Principal escolhido pelo usuário, sem troca |
-
-Se a CLI não expuser o esforço, registre o valor herdado/não confirmado; não simule o parâmetro. Refaça a escolha quando houver retrato, preferências ou falha de capacidade.
+Sem dados comparáveis ou autorização para alterar a seleção, preserve o modelo e esforço herdados e registre a incerteza. Só envie parâmetros expostos pela ferramenta e permitidos pelo host; valide a entrega antes de concluir que a escolha é adequada ou econômica.
 
 ## Agentes próprios
 
@@ -56,9 +47,9 @@ Leia o que for pedido e devolva só o resumo no formato solicitado.
 
 ## Subdelegação e proxies
 
-- Um subagente só delega se a ferramenta `Agent` estiver entre as suas ferramentas. Para o modo padrão sem subdelegação, omita-a em `tools`.
+- Subdelegação depende do tipo de agente e dos recursos efetivamente expostos; não presuma suporte por incluir `Agent`. No modo padrão, proíba-a no contrato e restrinja ferramentas quando o runtime permitir.
 - Agentes servidos por proxy (por exemplo, roteadores que expõem modelos de outros provedores como agentes) costumam fixar o modelo: o parâmetro `model` é ignorado. Escolha o agente pelo nome e registre o modelo declarado na descrição dele.
 
 ## Custo nesta CLI
 
-Em assinatura, o custo é a cota de uso: delegar leitura pesada a `haiku` ou `sonnet` preserva a cota do modelo maior e o contexto do principal. Em API, a cobrança segue as tarifas do modelo de cada agente.
+Em assinatura, confira como cotas e créditos são contabilizados; não presuma cotas separadas ou economia. Em API, confira as tarifas aplicáveis e inclua tentativas e revisão.

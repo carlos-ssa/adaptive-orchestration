@@ -30,7 +30,7 @@ Os scripts usam só a biblioteca padrão do Python. O retrato fica em `data/` (i
 python scripts/aa_rank.py --perfil codigo --capacidade eng --min 50 --creators anthropic,openai --cli claude-code
 ```
 
-`--cli claude-code` acrescenta apelido e esforço; `--cli codex` emite slug e `model_reasoning_effort` (confira em `/model`). Candidatos sem apelido no Claude Code ficam marcados, sem mudar o ranking. Sem retrato nem preferências, use a tabela provisória datada do [Claude Code](references/claude-code.md#partida-sem-retrato) ou do [Codex](references/codex.md#partida-sem-retrato). Os dados exigem atribuição ao Artificial Analysis e não devem ser redistribuídos.
+`--cli claude-code` sugere apelido e esforço; `--cli codex` sugere slug e a chave TOML `model_reasoning_effort`. Confirme o schema e a política da sessão antes de enviar parâmetros. `--available slug-a,slug-b` restringe aos slugs previamente mapeados para modelos disponíveis; sem ele, a lista não confirma disponibilidade. Retratos com mais de sete dias são rejeitados; `--allow-stale` permite uso identificado como hipótese datada. Sem dados comparáveis, veja [Claude Code](references/claude-code.md#partida-sem-dados) ou [Codex](references/codex.md#partida-sem-dados). Os dados exigem atribuição ao Artificial Analysis e não devem ser redistribuídos.
 
 Registre cada bloco em `data/calibracao.jsonl` e consulte o resumo para calibrar os pisos (detalhes em [Calibração](references/model-selection.md#calibração)):
 
@@ -56,7 +56,7 @@ python -m unittest discover -s tests -v
 | 2 | Código delimitado, migração mecânica, revisão | Modelo intermediário, esforço médio |
 | 3 | Ambiguidade, arquitetura, integração, decisão | Principal |
 
-Os modelos de cada faixa vêm de `preferences.local.md` (opcional, ignorado pelo Git) ou do retrato cruzado com o que a CLI oferece. Em assinatura, o custo é cota, e a skill preserva a do modelo mais caro. Veja [seleção de modelos](references/model-selection.md) e o [exemplo de preferências](references/environment.md#preferências-opcionais).
+Os modelos de cada faixa vêm de `preferences.local.md` (opcional, ignorado pelo Git) ou do retrato cruzado com o que a CLI oferece e permite selecionar. Sem evidência suficiente, preserve a seleção herdada. Em assinatura, confirme cotas e créditos aplicáveis; preço de API não prova consumo de assinatura. Veja [seleção de modelos](references/model-selection.md) e o [exemplo de preferências](references/environment.md#preferências-opcionais).
 
 ## Conteúdo
 
@@ -68,6 +68,8 @@ Os modelos de cada faixa vêm de `preferences.local.md` (opcional, ignorado pelo
 - [Fontes](references/sources.md) e [cenários de validação](evals/README.md).
 
 ## Limites e licença
+
+A [auditoria de 13/11/2026](evals/audit-2026-11-13.md) registra correções, testes e limites da comparação. O piloto reproduzível `python evals/run_pilot.py --output <pasta-nova> --cli codex` também aceita `--cli claude`; requer a CLI instalada e autenticada. Não instala ferramentas. A execução A/B no Codex CLI local encontrou falha de infraestrutura; não há comprovação de redução de 20% em tokens ou cota.
 
 A skill não muda configuração global nem o modelo principal, não instala ferramentas e não autoriza ações externas fora do pedido. Rankings orientam candidatos; a economia real depende dos resultados e da cobrança do ambiente. A [rodada 3, Parte C](evals/round3-2026-11-12.md#parte-c-execução-nativa-no-claude-code) validou neste ambiente a delegação nativa no Claude Code com modelo/esforço selecionados e verificação por script, em logs sintéticos. A economia de cota em tarefas reais continua sem comprovação; veja [evals](evals/README.md).
 
