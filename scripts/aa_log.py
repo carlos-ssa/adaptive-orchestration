@@ -38,6 +38,29 @@ def nonempty(value: str) -> str:
     return value.strip()
 
 
+def validate_record(row: dict) -> None:
+    if not isinstance(row, dict):
+        raise ValueError("registro deve ser objeto")
+    if type(row.get("faixa")) is not int or row["faixa"] not in range(4):
+        raise ValueError("faixa deve ser inteiro de 0 a 3")
+    for key in ("data", "tipo", "modelo", "esforco"):
+        if not isinstance(row.get(key), str) or not row[key].strip():
+            raise ValueError(f"{key} deve ser texto não vazio")
+    try:
+        iso_date(row["data"])
+    except argparse.ArgumentTypeError as exc:
+        raise ValueError(str(exc)) from exc
+    if row.get("resultado") not in RESULTS:
+        raise ValueError("resultado inválido")
+    if row["resultado"] == "aceito":
+        if row.get("motivo") is not None:
+            raise ValueError("aceito não deve ter motivo")
+    elif row.get("motivo") not in REASONS:
+        raise ValueError("corrigido/refeito exige motivo válido")
+    if "consumo" in row and (not isinstance(row["consumo"], str) or not row["consumo"].strip()):
+        raise ValueError("consumo deve ser texto com unidade")
+
+
 def summarize(path: Path) -> None:
     groups = defaultdict(Counter)
     failures = Counter()
@@ -47,6 +70,7 @@ def summarize(path: Path) -> None:
                 continue
             try:
                 row = json.loads(line)
+                validate_record(row)
                 key = (row["faixa"], row["tipo"], row["modelo"])
                 result = row["resultado"]
                 if result not in RESULTS:
@@ -105,8 +129,15 @@ def main() -> int:
                 if getattr(args, name) is not None:
                     row[name] = getattr(args, name)
             args.arquivo.parent.mkdir(parents=True, exist_ok=True)
-            with args.arquivo.open("a", encoding="utf-8") as stream:
-                stream.write(json.dumps(row, ensure_ascii=False) + "\n")
+            # Uma escrita binária evita fundir o registro com a última linha sem LF.
+            with args.arquivo.open("a+b") as stream:
+                stream.seek(0, 2)
+                prefix = b""
+                if stream.tell():
+                    stream.seek(-1, 2)
+                    if stream.read(1) != b"\n":
+                        prefix = b"\n"
+                stream.write(prefix + (json.dumps(row, ensure_ascii=False) + "\n").encode("utf-8"))
             print(f"Bloco registrado em {args.arquivo}")
     except (OSError, ValueError) as exc:
         print(f"Erro na calibração: {exc}", file=sys.stderr)

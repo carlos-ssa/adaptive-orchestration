@@ -20,9 +20,11 @@ O modelo mais barato por token pode consumir mais raciocínio e tentativas; o ma
 Os dados ficam em `data/`, na raiz da skill, gerados por `scripts/aa_snapshot.py` a partir da [API gratuita](https://artificialanalysis.ai/data-api/docs) (exige `AA_API_KEY`; 100 requisições por dia; atribuição obrigatória; não redistribuir). `aa-snapshot.json` guarda todos os campos; `aa-snapshot.md` traz tabelas de capacidade, custo e velocidade para leitura humana.
 
 1. Rode `python scripts/aa_snapshot.py --check` a partir da raiz da skill. Código 0: use o retrato existente.
-2. Se estiver vencido ou ausente e houver rede e chave, rode `python scripts/aa_snapshot.py --creators <provedores da CLI>` (por exemplo `anthropic,openai`; o filtro vale só para o Markdown). Sem chave ou rede, não navegue pelo site a cada tarefa: reutilize o retrato datado disponível ou `preferences.local.md` e registre a lacuna; sem ambos, use a tabela provisória datada da CLI ([Claude Code](claude-code.md#partida-sem-retrato), [Codex](codex.md#partida-sem-retrato)).
-3. Para escolher, rode `scripts/aa_rank.py` em vez de ler as tabelas inteiras (veja abaixo).
+2. Se estiver vencido ou ausente e houver rede e chave, rode `python scripts/aa_snapshot.py --creators <provedores da CLI>` (por exemplo `anthropic,openai`; o filtro vale só para o Markdown). Sem chave ou rede, não navegue pelo site a cada tarefa: reutilize o retrato datado disponível ou `preferences.local.md` e registre a lacuna; sem ambos, mantenha a seleção herdada quando viável e registre a lacuna.
+3. Para escolher, rode `scripts/aa_rank.py` em vez de ler as tabelas inteiras (veja abaixo). O ranking rejeita retratos vencidos; use `--allow-stale` explicitamente apenas como hipótese datada, sem afirmar preços atuais. `--max-age-days` ajusta a validade.
 4. Cruze o resultado com os modelos que a CLI realmente oferece. Nomes do Artificial Analysis e apelidos da CLI diferem; registre o mapeamento em `preferences.local.md` para não refazê-lo.
+
+Depois de confirmar esse mapeamento e a autorização para selecionar modelos, `--available <slug-a>,<slug-b>` filtra os candidatos; slugs pertencem ao retrato, não são IDs de runtime confirmados pelo script. Sem esse filtro, o ranking pode incluir modelos indisponíveis. Requisitos de ferramentas, modalidade e contexto continuam sendo verificação do coordenador.
 
 ### O que o retrato informa
 
@@ -33,6 +35,8 @@ Os dados ficam em `data/`, na raiz da skill, gerados por `scripts/aa_snapshot.py
 | Preço por token | Entrada, cache (leitura), cache (gravação), saída, em US$/1M | Custo de contexto: domina leitura extensa e sessões longas |
 | Verbosidade | US$/tarefa do índice e saída/tarefa estimada | Quanto o modelo gera e raciocina; domina geração e código |
 | Velocidade | tok/s, 1º token, 1º token de resposta, ponta a ponta | Tarefas interativas ou caminho crítico |
+
+O script prioriza as médias `performance_v3` e identifica a metodologia na saída. Só usa medianas legadas quando o objeto v3 não existe; campos v3 ausentes continuam desconhecidos, sem misturar metodologias. A [documentação da API](https://artificialanalysis.ai/data-api/docs#deprecations), conferida em 13/11/2026, anuncia que as métricas legadas passam a nulas em 10/12/2026. Ponta a ponta de 500 tokens não está no v3 gratuito. Médias v3 e medianas legadas não são estatísticas equivalentes.
 
 O plano gratuito não traz janela de contexto, modalidades (imagem, áudio), avaliações individuais, uso de ferramentas nem preços diferenciados para contexto longo. Confira esses requisitos na documentação do provedor ou na página do modelo quando a tarefa depender deles. O Artificial Analysis não publica mais Coding Index nem Agentic Index; não os procure.
 
@@ -61,10 +65,10 @@ python scripts/aa_rank.py --perfil codigo --capacidade eng --ref <slug do princi
 python scripts/aa_rank.py --perfil agente --min 45 --max-ttfat 30
 ```
 
-`--capacidade` escolhe o índice da área (padrão: Intel) e `--min` define o piso nele. Em `--ref`, use o slug da variante no esforço em que o principal roda (ex.: `claude-opus-5-5-high`); o slug sem sufixo costuma ser a variante Max e eleva o piso. `--ref` e `--pct` definem o piso como porcentagem da nota do principal na mesma área e mostram quanto o principal custaria no perfil; assim o piso acompanha novas versões sem fixar nomes. Com `--min`, a lista vem ordenada pelo menor custo no perfil; sem ele, por pontos por dólar (`--ordem` altera). `--max-ttfat` e `--min-tps` excluem modelos lentos. O nome da variante (Low, Medium, High, Xhigh, Max) indica o esforço a passar para a CLI.
+`--capacidade` escolhe o índice da área (padrão: Intel) e `--min` define o piso nele. Em `--ref`, use o slug da variante no esforço em que o principal roda (ex.: `claude-opus-5-5-high`); sem sufixo, confirme o esforço nos dados; não infira Max. `--ref` e `--pct` definem o piso como porcentagem da nota do principal na mesma área e mostram quanto o principal custaria no perfil; assim o piso acompanha novas versões sem fixar nomes. Com `--min`, a lista vem ordenada pelo menor custo no perfil; sem ele, por pontos por dólar (`--ordem` altera). `--max-ttfat` e `--min-tps` excluem modelos lentos. O sufixo da variante é uma hipótese de mapeamento; confirme modelo e esforço no runtime antes de usá-los.
 
 `--cli claude-code` acrescenta `model` pela família (haiku/sonnet/opus/fable) e `effort` pelo sufixo; candidatos sem apelido ficam como “não exposto nesta CLI”, sem filtragem nem mudança na ordem.
-`--cli codex` usa o slug como `model` e o sufixo como `model_reasoning_effort`; confira o nome e os valores aceitos em `/model`. Sem sufixo, o esforço fica sem dados, não é inferido como Max.
+`--cli codex` sugere slug como `model` e sufixo como `model_reasoning_effort` de configuração; não presume campos de spawn. Confira o schema exposto e a política do host. Sem sufixo, o esforço fica sem dados, não é inferido como Max.
 O mapeamento fica em `scripts/aa_common.py`; é uma sugestão de parâmetros, não confirmação do modelo servido pelo provedor ou proxy.
 
 ## Custo esperado: o que conta é a tarefa concluída
@@ -85,15 +89,15 @@ O piso depende de quanto custa errar:
 | Verificação manual ou cara, caminho crítico, retrabalho caro | Mais alto: perto do principal na área do bloco |
 | Falha silenciosa possível (erro plausível que ninguém confere) | Não delegue abaixo da faixa 3 sem verificação independente |
 
-Compare também com o próprio principal: `--ref` mostra quanto ele custaria no perfil. Se o candidato economiza pouco, o contrato, a espera e a revisão anulam a diferença; resolva no principal. Ponto de partida, a calibrar: economia abaixo de 25% no perfil é pouca. Em assinatura, entre candidatos com custo até 10% diferente, prefira o que não gasta a cota do modelo do principal.
+Compare também com o próprio principal: `--ref` mostra quanto ele custaria no perfil. Compare a economia estimada com coordenação, espera, tentativas e revisão; sem dados comparáveis, não presuma vantagem ou cotas independentes.
 
-Pisos de partida, a calibrar pelos resultados: na faixa 1, Intel suficiente para extrair e resumir (`--min`), a partir do candidato mais barato que já entregou bem; na faixa 2, 85 a 90% do principal na área do bloco (`--ref`, `--pct`) com verificação manual, e 75 a 80% quando testes automáticos cobrem a alteração.
+Hipóteses ilustrativas, não validadas e não obrigatórias, a calibrar por tarefas comparáveis: na faixa 1, Intel suficiente para extrair e resumir (`--min`), a partir do candidato mais barato que já entregou bem; na faixa 2, 85 a 90% do principal na área do bloco (`--ref`, `--pct`) com verificação manual, e 75 a 80% quando testes automáticos cobrem a alteração.
 
 ### Esforço
 
 O esforço faz parte da escolha. Cada variante do retrato (Low, Medium, High, Xhigh, Max) é um par de modelo e esforço com capacidade, verbosidade e latência próprias. Compare variantes entre si: o esforço médio de um modelo maior pode superar o esforço alto de um menor e custar menos, e o esforço máximo costuma multiplicar saída e espera por pouco ganho. Passe à CLI o esforço da variante escolhida quando ela aceitar.
 
-Troque de modelo em pontos naturais da tarefa. O cache pertence ao modelo que o gravou, então a troca reenvia o contexto a preço cheio; descer de modelo perde o raciocínio anterior. Antes de trocar o principal, resuma ou compacte o contexto. Um executor novo sempre começa sem cache: o perfil de custo já cobra a gravação da entrada nova.
+Não troque o modelo principal sem autorização e suporte do host. Cache, reaproveitamento de contexto e cobrança variam por provedor e runtime; não presuma cache vazio ou custo integral. Considere contexto e custo de transferência antes de uma troca autorizada.
 
 ### Calibração
 
@@ -104,7 +108,7 @@ python scripts/aa_log.py --faixa 2 --tipo codigo --modelo executor --esforco med
 python scripts/aa_log.py --resumo
 ```
 
-O resumo agrega por faixa/tipo/modelo e sinaliza duas falhas por capacidade na mesma faixa/tipo, inclusive entre modelos diferentes; não altera o piso automaticamente. `--arquivo <caminho>` permite separar registros e `--data AAAA-MM-DD` substitui a data de hoje. O consumo real substitui a estimativa do perfil nas escolhas seguintes. Duas falhas por capacidade na mesma faixa e tipo de tarefa elevam o piso dessa faixa; entregas aceitas com folga permitem testar um candidato mais barato. Falhas por contexto, acesso, ferramenta ou infraestrutura não contam: corrija o contrato ou a condição de execução.
+O resumo agrega por faixa/tipo/modelo e sinaliza duas falhas por capacidade na mesma faixa/tipo, inclusive entre modelos diferentes; não altera o piso automaticamente. `--arquivo <caminho>` permite separar registros e `--data AAAA-MM-DD` substitui a data de hoje. O consumo real substitui a estimativa do perfil nas escolhas seguintes. Duas falhas por capacidade na mesma faixa e tipo de tarefa justificam revisar o piso, sem exigir aumento automático; entregas aceitas com folga permitem testar um candidato mais barato. Falhas por contexto, acesso, ferramenta ou infraestrutura não contam: corrija o contrato ou a condição de execução.
 
 ## Processo de escolha
 
@@ -122,9 +126,9 @@ Não invente economia nem bloqueie trabalho executável por falta de dados. Peç
 
 ## Assinatura, créditos e proxy
 
-Em assinatura (Claude Pro/Max, ChatGPT), créditos ou proxy, o custo é cota e limite de uso, não dólar por token. Os custos do retrato continuam úteis como comparação relativa de consumo. Preserve a cota do modelo mais caro: leitura, triagem e extração vão para a faixa 1 mesmo quando o custo em dólar não aparece na conta.
+Em assinatura, créditos ou proxy, confirme as regras de cotas e cobrança aplicáveis. Preços de API não demonstram consumo relativo de assinatura nem cotas separadas; trate economia como desconhecida sem evidência.
 
-Um teto em dólar dado pelo usuário vira estimativa por executor com `aa_rank.py` (`--entrada`, `--cache`, `--saida` do bloco). Se a CLI não informar o consumo, o executor relata os tokens aproximados lidos e gerados (bytes ÷ 4 serve de ordem de grandeza) e o principal soma e compara com o teto.
+Um teto em dólar dado pelo usuário vira estimativa por executor com `aa_rank.py` (`--entrada`, `--cache`, `--saida` do bloco). Sem medição de consumo e tarifas aplicáveis, uma estimativa não garante cumprimento do teto: informe a incerteza e não declare gasto real. Para teto rígido, use controle de orçamento confiável ou pare antes de excedê-lo.
 
 ## Esforço e disponibilidade
 
@@ -138,3 +142,5 @@ Um teto em dólar dado pelo usuário vira estimativa por executor com `aa_rank.p
 Distinga API, assinatura, créditos e proxy. Quando conhecidos, inclua entrada, cache, saída/raciocínio, ferramentas, executores, tentativas e revisão. Não converta tokens em dinheiro sem tarifas aplicáveis. Não conte duas vezes componentes já incluídos na cobrança total. Um custo publicado em benchmark não prevê a conta do usuário.
 
 Se o pedido incluir avaliação do fluxo, compare solo e equipe com as mesmas tarefas, materiais, cobertura e verificação, incluindo casos típicos e difíceis. Isso não é pré-requisito para cada delegação. Diferencie simulação de decisões, execução real e medição de custo. Não use confiança autorrelatada como evidência.
+
+Ao avaliar mudanças de roteamento, compare com a linha de base nas mesmas tarefas e critérios: cobertura, correção, falhas silenciosas e retrabalho, além de latência e custo total medidos. Não aceite economia que reduza critérios obrigatórios de qualidade; sem medição, relate hipótese, não ganho comprovado.

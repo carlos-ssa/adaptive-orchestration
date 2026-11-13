@@ -115,6 +115,26 @@ class LogTests(unittest.TestCase):
         response = self.run_log("--resumo", code=1)
         self.assertIn("linha 1 inválida", response.stderr)
 
+    def test_summary_rejects_invalid_schema_before_partial_output(self):
+        self.record()
+        row = json.loads(self.path.read_text().strip())
+        for key, value in (("faixa", "2"), ("faixa", True), ("faixa", 9),
+                           ("modelo", []), ("data", "tomorrow"), ("resultado", "refeito"),
+                           ("motivo", "capacidade"), ("tipo", ""), ("consumo", 100)):
+            with self.subTest(key=key, value=value):
+                self.path.write_text(json.dumps(dict(row, **{key: value})), encoding="utf-8")
+                result = self.run_log("--resumo", code=1)
+                self.assertIn("linha 1 inválida", result.stderr)
+                self.assertNotIn("Traceback", result.stderr)
+                self.assertEqual(result.stdout, "")
+
+    def test_append_after_missing_final_newline_preserves_records(self):
+        self.record()
+        self.path.write_bytes(self.path.read_bytes().rstrip(b"\n"))
+        self.record()
+        output = self.run_log("--resumo").stdout
+        self.assertIn("| 2 | codigo | executor-A | 2 | 0 | 0 |", output)
+
 
 if __name__ == "__main__":
     unittest.main()

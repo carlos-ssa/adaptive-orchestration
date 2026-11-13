@@ -8,7 +8,7 @@ Os caminhos, nomes de modelos e comandos abaixo são fictícios; confirme os equ
 Objetivo: atualizar os consumidores de fetchUser para getAccount no pacote billing.
 Premissas: o principal já alterou a API compartilhada e confirmou o novo retorno.
 Materiais: contrato de API, inventário de chamadas e decisão de compatibilidade.
-Escolha: migração billing → executor-A/herdado (não exposto) | capacidade sem dados ≥ piso sem dados | custo no perfil codigo: sem dados | 1º token de resposta: sem dados
+Escolha: migração billing → executor-A/herdado (não exposto) | capacidade e piso: sem dados | custo no perfil codigo: sem dados | 1º token de resposta: sem dados
 Escrita: packages/billing/src e packages/billing/test.
 Proibido: alterar API compartilhada, outros pacotes ou executar deploy.
 Subdelegação: proibida; necessidades adicionais retornam ao principal.
@@ -30,7 +30,7 @@ Disponibilidade: leitor-A (nome fictício) exposto pela ferramenta; principal es
 Evidência: leitor-A passou nas verificações locais recentes desta mesma transformação.
 Esforço: herdado e não exposto; sem tentativa de inventar configuração.
 Custos/benchmark externo: desconhecidos; rede indisponível nesta execução.
-Escolha: extração de datas → leitor-A/herdado (não exposto) | capacidade sem dados ≥ piso sem dados | custo no perfil leitura: sem dados | 1º token de resposta: sem dados
+Escolha: extração de datas → leitor-A/herdado (não exposto) | capacidade e piso: sem dados | custo no perfil leitura: sem dados | 1º token de resposta: sem dados
 Verificação: validar as datas contra as fontes.
 Se falhar: devolver ao principal para corrigir contexto e reavaliar capacidade.
 Reavaliar: mudança de documentos ou evidência nova de capacidade.

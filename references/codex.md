@@ -8,22 +8,13 @@ Conferido na [documentação oficial de skills](https://learn.chatgpt.com/docs/b
 - Instalações antigas em `~/.codex/skills/` não aparecem na documentação atual; confira em `/skills` se a skill foi carregada.
 - Invocação explícita: `$adaptive-orchestration <pedido>` ou pelo menu `/skills`. Implícita: pela `description`, controlada por `policy.allow_implicit_invocation` em `agents/openai.yaml`.
 
-## Partida sem retrato
+## Partida sem dados
 
-Padrão provisório de 13/11/2026, substituível: use somente sem retrato e sem `preferences.local.md`. Os marcadores abaixo não são IDs: resolva-os em `/model` antes de delegar. Não comprova capacidade nem economia; verifique cada entrega.
-
-| Faixa | Partida |
-|---|---|
-| 0 | Script ou ferramenta, sem modelo |
-| 1 | `model="<modelo leve disponível>"`, `model_reasoning_effort="low"` |
-| 2 | `model="<modelo intermediário disponível>"`, `model_reasoning_effort="medium"` |
-| 3 | Principal escolhido pelo usuário, sem troca |
-
-Se o modelo não aceitar o esforço, registre o valor herdado/não confirmado; não simule o parâmetro. Refaça a escolha quando houver retrato, preferências ou falha de capacidade.
+Preserve o modelo e esforço herdados quando não houver evidência ou escolha autorizada. Não exija `/model`: uma política do host pode permitir troca apenas por solicitação explícita do usuário. Em delegação autorizada, consulte o schema real da ferramenta; `model_reasoning_effort` abaixo é chave de configuração TOML, não um campo de spawn presumido. Registre parâmetros solicitados e valores efetivos separadamente.
 
 ## Agentes próprios
 
-Arquivos TOML em `~/.codex/agents/` (pessoal) ou `.codex/agents/` (projeto). Campos obrigatórios: `name`, `description`, `developer_instructions`. Campos omitidos herdam do agente pai.
+Arquivos TOML em `~/.codex/agents/` (pessoal) ou `.codex/agents/` (projeto). Campos obrigatórios: `name`, `description`, `developer_instructions`. Valores omitidos seguem a precedência documentada: pedido explícito, padrões de `[agents]` e pai; uma definição personalizada pode prevalecer. Se outro modelo for selecionado sem esforço definido, pode usar o padrão desse modelo.
 
 ```toml
 name = "leitor-barato"
@@ -49,4 +40,4 @@ max_concurrent_threads_per_session = 4
 
 ## Custo nesta CLI
 
-No plano ChatGPT, o custo é a cota ou os créditos do Codex ([preços](https://learn.chatgpt.com/docs/pricing)); na API, as tarifas por token. Subagente com modelo leve e esforço baixo em leitura e triagem preserva a cota do modelo principal.
+No plano ChatGPT, o custo é a cota ou os créditos do Codex ([preços](https://learn.chatgpt.com/docs/pricing)); na API, as tarifas por token. Uma seleção diferente pode alterar consumo ou cota; confirme a política de cobrança e os valores efetivos antes de afirmar economia.

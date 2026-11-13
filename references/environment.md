@@ -27,7 +27,7 @@ A skill não fixa um número de executores. Escolha a concorrência considerando
 
 O modo padrão é **sem subdelegação**: só o principal cria executores e revisores. Envie essa regra no contrato dos executores. Use uma restrição técnica quando suportada; caso contrário, a regra continua sendo uma instrução, não um bloqueio garantido.
 
-O usuário pode optar por subdelegação. Confirme suporte e defina escopo, concorrência total e profundidade permitida antes de habilitá-la. Os agentes descendentes contam para o limite total. Nenhum executor pode ampliar as próprias permissões.
+O usuário pode optar por subdelegação. Confirme suporte e defina escopo, concorrência total e profundidade permitida antes de habilitá-la. Conte descendentes conforme o limite real do runtime; limites diferem entre produtos. Nenhum executor pode ampliar as próprias permissões.
 
 Com subdelegação, reserve vagas antes de criar descendentes: use quota compartilhada oferecida pelo runtime ou concessões de capacidade registradas pelo coordenador. Não permita que vários executores interpretem a mesma vaga como disponível. Sem meio confiável de coordenar essa reserva, centralize as criações no principal e informe a limitação.
 
